@@ -8,6 +8,13 @@ This is a **greenfield, spec-driven project**. No application code exists yet â€
 documents and a `.claude/` toolkit. The first real work is bootstrapping the project skeleton
 (tasklist.txt TASK 1). Do not assume build/test tooling exists; establish it as tasks require it.
 
+## Git / Commit Rules
+
+- Commits are authored by the repository owner's user account (`git config user.name` /
+  `user.email`) â€” **not** Claude.
+- **Do not add a `Co-Authored-By` trailer** (no Claude co-author / co-owner) or any AI attribution
+  to commit messages or PR bodies. Keep messages plain and descriptive.
+
 ## What Hephaestus Is
 
 Hephaestus is an internal AI coding assistant (inspired by GitHub Copilot / VS Code chat / agentic
