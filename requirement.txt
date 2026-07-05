@@ -1,0 +1,308 @@
+# Hephaestus - Internal AI Coding Assistant Requirements
+
+## 1. Product Vision
+Hephaestus is an internal AI-powered coding assistant inspired by GitHub Copilot, VS Code chat, and agentic coding workflows. It connects to the company’s internal AI API and provides a developer-friendly chat UI that can understand large codebases, focus on selected modules, plan changes before execution, edit files safely, run tests, and maintain project knowledge for future prompts.
+
+## 2. Core Goal
+Create a desktop/web coding assistant where a developer can load a repository, chat with an AI assistant, ask it to analyze code, focus on a module, plan a change, execute code modifications, run tests, and update shared project knowledge in CLAUDE.md.
+
+## 3. Product Name
+Name: Hephaestus
+Theme: Forge, build, repair, architecture, craftsmanship, engineering intelligence.
+Suggested tagline: Forge better software with agentic code intelligence.
+
+## 4. Target Users
+- Internal developers
+- QA engineers writing automation
+- Architects reviewing codebases
+- Engineering leads validating impact and implementation plans
+
+## 5. Non-Negotiable Behavior
+- Always plan before changing code.
+- Always show what will be changed before execution.
+- Always test changes when tests are available.
+- Always update CLAUDE.md after completing meaningful work.
+- Do not create excessive markdown files per task.
+- Maintain lightweight working notes during execution and generate final documentation only at the end.
+- Use the correct model based on task complexity.
+- Work in chunks for large repositories.
+- Preserve user code style and project conventions.
+- Never overwrite user work without showing a diff or plan first.
+
+## 6. Main Features
+
+### 6.1 Chat UI
+The app must provide a conversation-style coding interface similar to VS Code chat.
+
+Required capabilities:
+- Chat input box
+- Streaming assistant responses
+- Conversation history
+- Code block rendering
+- File reference chips
+- Action buttons: Plan, Apply, Test, Revert, Save Context
+- Status panel showing current task, selected module, files touched, and test status
+
+Acceptance criteria:
+- User can ask questions about the loaded repository.
+- User can request code changes.
+- Assistant shows a plan before editing.
+- UI clearly separates analysis, plan, file changes, and test results.
+
+### 6.2 Repository Loading
+The app must allow the user to load a local repository.
+
+Required capabilities:
+- Select repository folder
+- Scan file tree
+- Respect ignore rules from .gitignore and custom config
+- Detect project type where possible
+- Chunk files for AI context
+- Store repository metadata
+
+Acceptance criteria:
+- Repository tree appears in the UI.
+- Large files are chunked instead of loaded fully.
+- Ignored folders such as node_modules, target, build, dist, .git are excluded by default.
+
+### 6.3 Context Engine
+The app must create AI-friendly context in multiple formats.
+
+Required context formats:
+- Markdown summaries
+- JSON metadata
+- TOON-style compressed context
+- Graph-style dependency representation
+
+Required capabilities:
+- File summaries
+- Module summaries
+- Dependency mapping
+- Symbol/function/class extraction where possible
+- Context refresh after code changes
+
+Acceptance criteria:
+- User can generate context for the full repo or selected module.
+- Context can be exported.
+- Context is reused in later assistant requests.
+
+### 6.4 Module Focus Mode
+The app must support a focus behavior where the user can say: focus on this module.
+
+Required capabilities:
+- Select a folder/module as active focus
+- Prioritize focused module in prompts
+- Limit unrelated context unless needed
+- Show active focus in UI
+- Allow clearing focus
+
+Acceptance criteria:
+- User can set focus from chat or file tree.
+- Assistant responses prioritize focused module.
+- Focus state persists across the session.
+
+### 6.5 Plan-First Execution
+Before making changes, the assistant must create a clear plan.
+
+Plan must include:
+- Goal
+- Files likely to be changed
+- Step-by-step approach
+- Risks
+- Tests to run
+- Expected output
+
+Acceptance criteria:
+- Code modification cannot start without a plan stage.
+- User can approve, reject, or refine the plan.
+
+### 6.6 Agent Execution
+The app must support agent-like execution files similar to Copilot/Claude workflows.
+
+Required capabilities:
+- Define tasks in JSON/YAML
+- Execute one task at a time
+- Support task/subtask hierarchy
+- Track task status
+- Run command-line operations through a controlled executor
+- Capture outputs and errors
+
+Acceptance criteria:
+- A task can be selected and executed.
+- Each task produces a complete output or measurable progress.
+- Failed tasks report reason and next action.
+
+### 6.7 File Editing and Diff Review
+The assistant must edit files safely.
+
+Required capabilities:
+- Read files
+- Propose edits
+- Apply edits
+- Show diff
+- Revert changes
+- Track modified files
+
+Acceptance criteria:
+- Every applied code change has a visible diff.
+- User can revert assistant changes.
+- App prevents accidental bulk rewrite without confirmation.
+
+### 6.8 Test Runner
+The app must run tests alongside implementation.
+
+Required capabilities:
+- Detect common test commands
+- Allow user-configured test commands
+- Run targeted tests first
+- Run broader tests when needed
+- Capture result summary
+- Link failed tests to related files
+
+Acceptance criteria:
+- After each implementation task, relevant tests are run if available.
+- Test result is visible in UI.
+- Failed tests are included in the next fix plan.
+
+### 6.9 CLAUDE.md Knowledge Updates
+The app must maintain a CLAUDE.md file at repo root.
+
+CLAUDE.md must track:
+- Project overview
+- Architecture notes
+- Important commands
+- Coding conventions
+- Testing conventions
+- Current known constraints
+- Completed task notes
+- AI working rules
+
+Acceptance criteria:
+- CLAUDE.md is created if missing.
+- CLAUDE.md is updated after meaningful task completion.
+- Updates are concise and useful.
+
+### 6.10 Configuration
+Most non-UI behavior must be configurable through YAML/JSON.
+
+Required config areas:
+- AI API endpoint
+- Model routing rules
+- Context limits
+- Ignore paths
+- Test commands
+- Execution safety rules
+- Task file location
+- CLAUDE.md update rules
+
+Acceptance criteria:
+- App works with a default config.
+- User can override config without code changes.
+
+### 6.11 Model Routing
+The app must choose the correct model based on request type.
+
+Suggested routing:
+- Fast/light model: simple questions, small file explanation, formatting
+- Medium model: single-module implementation, test generation, bug fixing
+- Strong model: architecture changes, multi-file refactor, large-context reasoning
+
+Acceptance criteria:
+- Request classification decides model tier.
+- Model choice is visible in logs or UI.
+- User can override model in config.
+
+### 6.12 Large Codebase Support
+The app must support thousands of lines of code through chunking and retrieval.
+
+Required capabilities:
+- File chunking
+- Summary cache
+- Relevance search
+- Module-level context selection
+- Token budget management
+
+Acceptance criteria:
+- App does not send entire large repo blindly to AI.
+- Assistant retrieves only relevant chunks plus summaries.
+- Context selection is explainable.
+
+### 6.13 Safety and Permissions
+The app must protect the user’s repository.
+
+Required capabilities:
+- Restricted shell command execution
+- User confirmation for risky commands
+- Block destructive commands by default
+- Workspace-only file access
+- Secrets redaction in prompts/logs
+
+Acceptance criteria:
+- Destructive commands require confirmation or are blocked.
+- Files outside workspace cannot be modified.
+- Secrets are not sent to AI when detected.
+
+### 6.14 Final Documentation Generation
+The app should not generate many markdown files during every task. Documentation should be generated at the end.
+
+Required final docs:
+- Project architecture summary
+- Setup guide
+- Usage guide
+- Configuration reference
+- Agent/task workflow guide
+
+Acceptance criteria:
+- Final docs can be generated on demand.
+- Intermediate work mainly updates task status and CLAUDE.md only.
+
+## 7. Suggested Tech Stack
+Preferred stack can be changed by implementation constraints.
+
+Frontend:
+- React
+- TypeScript
+- Vite
+- Monaco Editor
+
+Backend:
+- Node.js/TypeScript or Python/FastAPI
+- WebSocket/SSE for streaming responses
+- File-system workspace service
+- Shell execution service
+
+Storage:
+- Local JSON/SQLite for sessions, tasks, summaries, and config
+
+AI Integration:
+- Internal office AI API
+- Configurable model routing
+
+## 8. Main User Flow
+1. User opens Hephaestus.
+2. User loads a repository.
+3. App scans repo and generates initial summaries.
+4. User chats with the assistant.
+5. User sets module focus if needed.
+6. Assistant creates a plan before code changes.
+7. User approves the plan.
+8. Assistant edits files.
+9. App shows diff.
+10. Assistant runs tests.
+11. Assistant fixes failures if requested.
+12. CLAUDE.md is updated.
+13. Task status is updated.
+14. Final docs can be generated at the end.
+
+## 9. Definition of Done
+The MVP is complete when:
+- A repository can be loaded.
+- Chat UI works with internal AI API.
+- Module focus works.
+- Context summaries are generated and reused.
+- Plan-first code editing works.
+- Diffs are shown.
+- Tests can be executed.
+- CLAUDE.md is maintained.
+- Task list execution works.
+- Final documentation can be generated on demand.

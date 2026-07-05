@@ -1,0 +1,346 @@
+# Hephaestus Task List
+
+Task format:
+- TASK: Major deliverable
+- SUBTASK: Implementation step
+- OUTPUT: Concrete result produced
+- TEST: How to verify it
+- PROGRESS: Approximate contribution to MVP completion
+
+Overall MVP Progress Target: 100%
+
+---
+
+TASK 1: Project Bootstrap
+PROGRESS: 5%
+
+SUBTASK 1.1: Create base project structure
+OUTPUT: Working frontend/backend project skeleton with clear folders
+TEST: App starts locally without errors
+
+SUBTASK 1.2: Add default configuration files
+OUTPUT: config/default.yaml or config/default.json with API, ignore paths, model routing, test commands
+TEST: App loads config successfully and prints active config in dev logs
+
+SUBTASK 1.3: Add environment handling
+OUTPUT: .env.example and runtime env loader
+TEST: Missing required env values produce clear error messages
+
+SUBTASK 1.4: Add basic health checks
+OUTPUT: Backend health endpoint and frontend startup screen
+TEST: Health endpoint returns OK and UI confirms backend connection
+
+---
+
+TASK 2: Chat UI MVP
+PROGRESS: 10%
+
+SUBTASK 2.1: Build main layout
+OUTPUT: Three-panel UI: repository tree, chat area, task/status panel
+TEST: UI renders without loaded repository
+
+SUBTASK 2.2: Add chat message flow
+OUTPUT: User can send a message and receive assistant response
+TEST: Mock AI response appears in chat
+
+SUBTASK 2.3: Add streaming response support
+OUTPUT: Assistant response streams token-by-token or chunk-by-chunk
+TEST: Long mock response streams visibly
+
+SUBTASK 2.4: Add code block rendering
+OUTPUT: Markdown/code responses render cleanly
+TEST: Response with Java/Python/TypeScript code displays correctly
+
+SUBTASK 2.5: Add action buttons
+OUTPUT: Plan, Apply, Test, Revert, Save Context buttons visible where relevant
+TEST: Buttons trigger placeholder handlers and state changes
+
+---
+
+TASK 3: Internal AI API Integration
+PROGRESS: 8%
+
+SUBTASK 3.1: Create AI client abstraction
+OUTPUT: Reusable AI client service independent from UI
+TEST: Unit test verifies request/response mapping
+
+SUBTASK 3.2: Connect to internal office AI API
+OUTPUT: Real API call works using configured endpoint/key
+TEST: Simple prompt returns successful response
+
+SUBTASK 3.3: Add error handling
+OUTPUT: Timeout, auth failure, and server failure are shown cleanly
+TEST: Simulated failed request displays user-safe error
+
+SUBTASK 3.4: Add model routing hook
+OUTPUT: Request includes selected model based on task classification
+TEST: Logs show model selected for simple, medium, and complex prompts
+
+---
+
+TASK 4: Repository Loader
+PROGRESS: 10%
+
+SUBTASK 4.1: Add repository folder selection
+OUTPUT: User can select/load local repository
+TEST: Selected path appears in UI
+
+SUBTASK 4.2: Scan file tree
+OUTPUT: Repository tree with files/folders
+TEST: Known sample repo tree is displayed correctly
+
+SUBTASK 4.3: Apply ignore rules
+OUTPUT: .git, node_modules, target, build, dist, and custom ignored paths excluded
+TEST: Ignored folders do not appear in tree
+
+SUBTASK 4.4: Detect project type
+OUTPUT: Basic detection for Java, Node, Python, mixed repo
+TEST: Sample repos produce expected project type
+
+SUBTASK 4.5: Store repository metadata
+OUTPUT: Metadata saved locally for current session
+TEST: Reloading app restores last loaded repo metadata
+
+---
+
+TASK 5: Context Engine
+PROGRESS: 12%
+
+SUBTASK 5.1: Implement file chunking
+OUTPUT: Large files split into token/line-aware chunks
+TEST: Large file produces multiple chunks with stable IDs
+
+SUBTASK 5.2: Generate markdown summaries
+OUTPUT: Per-file and per-module markdown-style summaries in local cache
+TEST: Summary exists for selected sample files
+
+SUBTASK 5.3: Generate JSON metadata
+OUTPUT: JSON containing file path, type, symbols, imports, exports, dependencies
+TEST: JSON validates against schema
+
+SUBTASK 5.4: Generate TOON-style compressed context
+OUTPUT: Compact context representation for AI prompts
+TEST: TOON output is shorter than markdown summary and keeps key facts
+
+SUBTASK 5.5: Generate graph-style dependency context
+OUTPUT: Nodes/edges for modules, files, imports, calls where possible
+TEST: Sample repo produces dependency graph JSON
+
+SUBTASK 5.6: Add context refresh
+OUTPUT: Context updates after file changes
+TEST: Modified file invalidates and regenerates its context
+
+---
+
+TASK 6: Module Focus Mode
+PROGRESS: 7%
+
+SUBTASK 6.1: Set focus from file tree
+OUTPUT: User can mark folder/module as active focus
+TEST: Focus badge appears in UI
+
+SUBTASK 6.2: Set focus from chat command
+OUTPUT: User can type focus on checkout module or similar
+TEST: Assistant sets matching module as focus
+
+SUBTASK 6.3: Prioritize focus in prompts
+OUTPUT: Context builder ranks focused module higher
+TEST: Prompt preview contains focused module context first
+
+SUBTASK 6.4: Clear focus
+OUTPUT: User can clear active focus
+TEST: Focus badge disappears and context ranking resets
+
+---
+
+TASK 7: Plan-First Workflow
+PROGRESS: 8%
+
+SUBTASK 7.1: Create planning prompt template
+OUTPUT: Standard plan response with goal, files, steps, risks, tests, expected output
+TEST: Change request returns structured plan
+
+SUBTASK 7.2: Add plan approval state
+OUTPUT: App stores pending plan before execution
+TEST: Apply button disabled until plan exists
+
+SUBTASK 7.3: Add plan refinement flow
+OUTPUT: User can modify request and regenerate plan
+TEST: New plan replaces previous pending plan
+
+SUBTASK 7.4: Prevent direct edit without plan
+OUTPUT: Guard blocks file modification when no approved plan exists
+TEST: Attempted direct edit returns safe error
+
+---
+
+TASK 8: File Editing and Diff Review
+PROGRESS: 10%
+
+SUBTASK 8.1: Implement workspace file reader
+OUTPUT: App can read files inside loaded repo only
+TEST: Reading outside workspace is blocked
+
+SUBTASK 8.2: Implement patch application
+OUTPUT: Assistant can apply controlled patches
+TEST: Sample patch changes expected file only
+
+SUBTASK 8.3: Add diff viewer
+OUTPUT: User sees before/after diff for changed files
+TEST: Diff accurately displays changed lines
+
+SUBTASK 8.4: Add revert capability
+OUTPUT: User can revert assistant-applied changes
+TEST: Revert restores original file content
+
+SUBTASK 8.5: Track modified files
+OUTPUT: Status panel lists touched files
+TEST: Modified files list updates after patch
+
+---
+
+TASK 9: Test Runner
+PROGRESS: 8%
+
+SUBTASK 9.1: Detect test commands
+OUTPUT: App identifies npm test, mvn test, gradle test, pytest, or configured commands
+TEST: Sample projects detect correct command
+
+SUBTASK 9.2: Run targeted tests
+OUTPUT: Relevant test command executes after implementation
+TEST: Command output appears in UI
+
+SUBTASK 9.3: Capture test result summary
+OUTPUT: Passed/failed status, duration, failed files, and error snippet
+TEST: Failing sample test produces clear failure summary
+
+SUBTASK 9.4: Feed failures back into assistant
+OUTPUT: Failed tests become context for next fix plan
+TEST: Fix request includes failure summary in prompt context
+
+---
+
+TASK 10: Agent Task Execution
+PROGRESS: 8%
+
+SUBTASK 10.1: Define task schema
+OUTPUT: JSON/YAML schema for task, subtask, status, output, test command, progress
+TEST: Example task file validates
+
+SUBTASK 10.2: Load task files
+OUTPUT: UI can display available tasks and subtasks
+TEST: Example tasklist appears in status panel
+
+SUBTASK 10.3: Execute one subtask at a time
+OUTPUT: Selected subtask runs through plan, apply, test, update knowledge flow
+TEST: Subtask completes with status and output
+
+SUBTASK 10.4: Track progress
+OUTPUT: Overall progress percentage updates based on completed tasks
+TEST: Completing subtask updates task and MVP progress
+
+---
+
+TASK 11: CLAUDE.md Knowledge Maintenance
+PROGRESS: 6%
+
+SUBTASK 11.1: Create CLAUDE.md template
+OUTPUT: CLAUDE.md created at repo root if missing
+TEST: Missing file is generated with required sections
+
+SUBTASK 11.2: Update project knowledge after task
+OUTPUT: Completed task notes, commands, conventions, constraints appended or updated concisely
+TEST: After completed task, CLAUDE.md contains useful new knowledge
+
+SUBTASK 11.3: Prevent noisy updates
+OUTPUT: Updates are concise and deduplicated
+TEST: Repeated task does not duplicate same notes
+
+SUBTASK 11.4: Use CLAUDE.md in future prompts
+OUTPUT: Prompt builder includes relevant CLAUDE.md sections
+TEST: Assistant response reflects stored project conventions
+
+---
+
+TASK 12: Safety and Permissions
+PROGRESS: 5%
+
+SUBTASK 12.1: Add workspace boundary guard
+OUTPUT: File reads/writes restricted to loaded repo
+TEST: Outside path access is blocked
+
+SUBTASK 12.2: Add command allow/block rules
+OUTPUT: Dangerous commands blocked by default
+TEST: rm -rf, credential dump, and system-level commands are blocked
+
+SUBTASK 12.3: Add command confirmation rules
+OUTPUT: Risky but valid commands require confirmation
+TEST: Install/build commands show confirmation prompt when configured
+
+SUBTASK 12.4: Add secrets redaction
+OUTPUT: Prompt/log builder masks detected secrets
+TEST: Sample API keys are redacted before AI call/logging
+
+---
+
+TASK 13: Model Routing
+PROGRESS: 4%
+
+SUBTASK 13.1: Create task classifier
+OUTPUT: Classifies request as simple, medium, complex, or architecture-level
+TEST: Example prompts route to expected categories
+
+SUBTASK 13.2: Map classifier to model config
+OUTPUT: Selected model tier comes from config
+TEST: Changing config changes model selection
+
+SUBTASK 13.3: Show selected model
+OUTPUT: UI/log displays selected model tier for transparency
+TEST: Chat request shows selected model tier
+
+---
+
+TASK 14: Final Documentation Generator
+PROGRESS: 4%
+
+SUBTASK 14.1: Generate setup guide
+OUTPUT: Setup documentation generated on demand
+TEST: Generated guide includes install, config, and run steps
+
+SUBTASK 14.2: Generate usage guide
+OUTPUT: Usage documentation generated on demand
+TEST: Generated guide explains repo load, chat, focus, plan, apply, test
+
+SUBTASK 14.3: Generate architecture summary
+OUTPUT: Architecture documentation generated on demand
+TEST: Generated summary reflects actual implemented modules
+
+SUBTASK 14.4: Generate agent workflow guide
+OUTPUT: Guide explains task files, subtasks, CLAUDE.md updates, and test flow
+TEST: Guide includes complete sample task execution lifecycle
+
+---
+
+TASK 15: MVP End-to-End Validation
+PROGRESS: 5%
+
+SUBTASK 15.1: Validate full user journey
+OUTPUT: Demo flow from repo load to code change to test to CLAUDE.md update
+TEST: End-to-end scenario completes successfully
+
+SUBTASK 15.2: Validate failure recovery
+OUTPUT: Failed test creates fix plan and allows retry
+TEST: Intentional failing test is fixed or reported with next action
+
+SUBTASK 15.3: Validate large repo behavior
+OUTPUT: Large repo uses chunking and focused context without full blind load
+TEST: Prompt context stays within configured token budget
+
+SUBTASK 15.4: Validate final docs
+OUTPUT: Final docs generated after MVP completion
+TEST: Docs match actual app behavior and configuration
+
+---
+
+MVP Completion Rule:
+A task is complete only when it produces its OUTPUT and passes its TEST. No task should be marked complete based only on code being written.
