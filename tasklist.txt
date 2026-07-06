@@ -46,26 +46,39 @@ STATUS: DONE — GET /api/health (tests/test_health.py) + src/App.tsx startup sc
 
 TASK 2: Chat UI MVP
 PROGRESS: 10%
+STATUS: DONE (2026-07-06) — "Forge" three-panel UI + mock SSE streaming chat.
+  Verified by frontend Vitest suite, backend chat tests, and end-to-end in a real
+  browser (backend serves the built SPA single-origin; screenshots captured).
 
 SUBTASK 2.1: Build main layout
 OUTPUT: Three-panel UI: repository tree, chat area, task/status panel
 TEST: UI renders without loaded repository
+STATUS: DONE — Header + RepoTree (empty state) / ChatPanel / StatusPanel.
+  Verified by App.test.tsx ("renders the three panels without a repository").
 
 SUBTASK 2.2: Add chat message flow
 OUTPUT: User can send a message and receive assistant response
 TEST: Mock AI response appears in chat
+STATUS: DONE — POST /api/chat (mock reply) + Composer/streamChat. Verified by
+  App.test.tsx and backend tests/test_chat.py; confirmed live in browser.
 
 SUBTASK 2.3: Add streaming response support
 OUTPUT: Assistant response streams token-by-token or chunk-by-chunk
 TEST: Long mock response streams visibly
+STATUS: DONE — SSE (OpenAI-style delta events) parsed via fetch ReadableStream;
+  streaming caret shown. Reassembly verified lossless in test_chat.py.
 
 SUBTASK 2.4: Add code block rendering
 OUTPUT: Markdown/code responses render cleanly
 TEST: Response with Java/Python/TypeScript code displays correctly
+STATUS: DONE — react-markdown + rehype-highlight, custom CodeBlock (lang label +
+  copy), forge-tuned .hljs theme. Verified in App.test.tsx and live (python block).
 
 SUBTASK 2.5: Add action buttons
 OUTPUT: Plan, Apply, Test, Revert, Save Context buttons visible where relevant
 TEST: Buttons trigger placeholder handlers and state changes
+STATUS: DONE — StatusPanel action bar; handlers mutate visible status (task, test
+  badge, files touched, saved contexts). Verified in App.test.tsx and live.
 
 ---
 

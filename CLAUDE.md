@@ -4,21 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1 (Project Bootstrap) is complete**: a Python/FastAPI backend
-and a React+TS+Vite+Monaco frontend skeleton exist, with config loading, env handling, and health
-checks. TASK 2 onward (from `tasklist.txt`) is not yet built. Backend stack was chosen as
-**Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend is React + TypeScript +
-Vite + Monaco.
+Early, spec-driven development. **TASK 1 (Bootstrap)** and **TASK 2 (Chat UI MVP)** are complete:
+config/env/health, a three-panel "Forge" chat UI, and a **mock** SSE streaming chat endpoint. TASK 3
+(real internal AI API — currently mocked) onward is not yet built. Backend stack is **Python/FastAPI**
+(matches the existing `.claude/` Python hooks); frontend is React + TypeScript + Vite + Monaco.
 
 ## Layout
 
 - `backend/` — FastAPI app. `app/config.py` loads `config/default.yaml`; `app/main.py` is the app
-  factory + `/api/health`. Tests in `backend/tests/`.
-- `frontend/` — Vite React app. `src/App.tsx` is the startup screen that polls `/api/health`;
-  `src/api.ts` is the backend client. Dev server proxies `/api` → backend (see `vite.config.ts`).
+  factory (`/api/health` + serves the built SPA when `frontend/dist` exists); `app/chat.py` is the
+  **mock** SSE chat endpoint (`POST /api/chat`, OpenAI-style `data: {"delta":…}` … `[DONE]`).
+  Tests in `backend/tests/`.
+- `frontend/` — Vite React app. `src/App.tsx` orchestrates health + chat state; `src/api.ts` has
+  `fetchHealth` and `streamChat` (parses SSE via a `fetch` ReadableStream). Components in
+  `src/components/`; design system in `src/theme.css` (the "Forge" palette) + `src/app.css`.
+  Dev server proxies `/api` → backend (`vite.config.ts`, `loadEnv`-based).
 - `config/default.yaml` — single source of non-UI behavior (AI endpoint, model routing, context
   limits, ignore paths, test commands, safety rules). `${ENV_VAR}` placeholders resolve from the
   environment; the AI API key is read by the env-var name in `ai.api_key_env`, never stored in YAML.
+
+## Design language ("The Forge")
+
+The UI commits to a warm industrial-forge identity: heated-iron graphite surfaces, molten-ember
+accents (`--ember`, `--ember-hot`, `--ember-core`), verdigris (`--patina`) for success. Fonts are
+self-hosted via `@fontsource`: Bricolage Grotesque (display), IBM Plex Sans (body), IBM Plex Mono
+(code/labels). Keep new UI consistent with the tokens in `src/theme.css` rather than introducing new
+colors/fonts.
 
 ## Commands
 
@@ -38,18 +49,25 @@ Frontend (from `frontend/`):
 ```bash
 npm install
 npm run dev         # Vite dev server (:5173), proxies /api -> backend
+npm run test        # Vitest (component tests)
 npm run typecheck   # tsc --noEmit
-npm run build       # tsc -b && vite build
+npm run build       # tsc -b && vite build  (emits frontend/dist/)
 ```
 
 Notes:
 - The backend boots and serves `/api/health` **without** a real AI key; health reports
   `ai_configured: false`. AI env vars are only required when an actual AI call is made
-  (`AppConfig.require_ai`).
-- Port `8000` may be occupied by another local service; override the backend port with
-  `--port <N>` and point the frontend proxy at it via `VITE_BACKEND_URL=http://127.0.0.1:<N>`.
+  (`AppConfig.require_ai`). `/api/chat` is currently a deterministic **mock** (TASK 3 wires real AI).
+- **Single-origin mode (most reliable locally):** run `npm run build`, then start the backend — it
+  serves the SPA at `/` with the API same-origin, so no dev proxy is involved. Open the backend URL
+  directly (e.g. `http://127.0.0.1:8000`).
+- The Vite dev proxy target comes from `VITE_BACKEND_URL` (shell or `frontend/.env.local`). Note: in
+  some sandboxed shells Vite caches its bundled config across restarts, so proxy-target changes may
+  not take effect until caches clear — prefer single-origin mode when scripting verification.
+- Port `8000` may be occupied by another local service; override with `--port <N>`.
 - Vite binds `localhost` (IPv6) by default — use `curl http://localhost:5173` (not `127.0.0.1`) or
   pass `--host 127.0.0.1` when scripting checks.
+- Set `HEPHAESTUS_STREAM_DELAY_S=0` to disable the chat streaming delay (used in tests).
 
 ## Git / Commit Rules
 

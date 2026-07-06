@@ -8,13 +8,20 @@ and exposes a health endpoint the frontend uses to confirm connectivity.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app import __version__
+from app.chat import router as chat_router
 from app.config import AppConfig, ConfigError, load_config
+
+# Built frontend (produced by `npm run build`). When present, the backend serves
+# it single-origin so no dev proxy is needed — the production deployment shape.
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 logger = logging.getLogger("hephaestus")
 
@@ -59,6 +66,13 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             "ai_configured": cfg.ai.configured,
             "config": cfg.summary(),
         }
+
+    app.include_router(chat_router)
+
+    # Mounted last so it only catches non-API paths. Serves the built SPA when
+    # available; harmless (skipped) during tests/dev when dist doesn't exist.
+    if FRONTEND_DIST.is_dir():
+        app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
 
     return app
 

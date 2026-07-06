@@ -1,78 +1,125 @@
-import { useEffect, useState } from "react";
-import { fetchHealth, type HealthResponse } from "./api";
+import { useCallback, useEffect, useState } from "react";
+import { fetchHealth, streamChat } from "./api";
+import type { ChatMessage, WorkspaceStatus } from "./types";
+import { Header, type ConnState } from "./components/Header";
+import { RepoTree } from "./components/RepoTree";
+import { ChatPanel } from "./components/ChatPanel";
+import { StatusPanel, type ActionKind } from "./components/StatusPanel";
 
-type ConnState =
-  | { kind: "connecting" }
-  | { kind: "connected"; health: HealthResponse }
-  | { kind: "error"; message: string };
+const INITIAL_STATUS: WorkspaceStatus = {
+  currentTask: "Idle",
+  moduleFocus: null,
+  filesTouched: [],
+  testStatus: "idle",
+  lastAction: null,
+  savedContexts: 0,
+};
 
-/**
- * Hephaestus startup screen (SUBTASK 1.4). Confirms the backend connection on
- * load by polling /api/health, and shows a clear status while connecting or on
- * failure. The full three-panel workspace UI arrives in TASK 2.
- */
+let idCounter = 0;
+const nextId = () => `m${++idCounter}`;
+
 export function App() {
-  const [state, setState] = useState<ConnState>({ kind: "connecting" });
+  const [conn, setConn] = useState<ConnState>({ kind: "connecting" });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [streaming, setStreaming] = useState(false);
+  const [status, setStatus] = useState<WorkspaceStatus>(INITIAL_STATUS);
 
+  // Startup: confirm backend connection (carried over from TASK 1).
   useEffect(() => {
     const controller = new AbortController();
-
-    async function check() {
-      try {
-        const health = await fetchHealth(controller.signal);
-        setState({ kind: "connected", health });
-      } catch (err) {
+    fetchHealth(controller.signal)
+      .then((health) => setConn({ kind: "connected", health }))
+      .catch((err: unknown) => {
         if (controller.signal.aborted) return;
-        setState({
-          kind: "error",
-          message: err instanceof Error ? err.message : "Unknown error",
-        });
-      }
-    }
-
-    check();
+        setConn({ kind: "error", message: err instanceof Error ? err.message : "Unknown error" });
+      });
     return () => controller.abort();
   }, []);
 
-  return (
-    <div className="startup">
-      <div className="startup__card">
-        <h1 className="startup__title">🔨 Hephaestus</h1>
-        <p className="startup__tagline">
-          Forge better software with agentic code intelligence.
-        </p>
-        <StatusBadge state={state} />
-      </div>
-    </div>
+  const sendMessage = useCallback(
+    async (text: string) => {
+      if (streaming) return;
+      const userMsg: ChatMessage = { id: nextId(), role: "user", content: text };
+      const assistantId = nextId();
+
+      // Build the outbound history from the messages known at send time.
+      const history = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
+
+      setMessages((prev) => [
+        ...prev,
+        userMsg,
+        { id: assistantId, role: "assistant", content: "", streaming: true },
+      ]);
+      setStreaming(true);
+      setStatus((s) => ({ ...s, currentTask: "Thinking…" }));
+
+      try {
+        for await (const delta of streamChat(history, status.moduleFocus)) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + delta } : m))
+          );
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "stream failed";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId
+              ? { ...m, content: `⚠️ Could not reach the assistant: ${message}` }
+              : m
+          )
+        );
+      } finally {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === assistantId ? { ...m, streaming: false } : m))
+        );
+        setStreaming(false);
+        setStatus((s) => ({ ...s, currentTask: "Idle" }));
+      }
+    },
+    [messages, streaming, status.moduleFocus]
   );
-}
 
-function StatusBadge({ state }: { state: ConnState }) {
-  if (state.kind === "connecting") {
-    return <div className="status status--pending">Connecting to backend…</div>;
-  }
-  if (state.kind === "error") {
-    return (
-      <div className="status status--error">
-        <strong>Backend unavailable.</strong> {state.message}
-        <div className="status__hint">
-          Start it with: <code>cd backend &amp;&amp; uvicorn app.main:app --reload</code>
-        </div>
-      </div>
-    );
-  }
+  // Action-bar handlers (SUBTASK 2.5). Placeholder behavior that produces
+  // clearly visible state changes; real workflows arrive in later tasks.
+  const handleAction = useCallback((action: ActionKind) => {
+    setStatus((s) => {
+      switch (action) {
+        case "plan":
+          return { ...s, lastAction: "Plan", currentTask: "Planning change" };
+        case "apply":
+          return {
+            ...s,
+            lastAction: "Apply",
+            currentTask: "Applied edit",
+            filesTouched: Array.from(new Set([...s.filesTouched, "src/example.ts"])),
+          };
+        case "test":
+          return { ...s, lastAction: "Test", testStatus: "running" };
+        case "revert":
+          return { ...s, lastAction: "Revert", filesTouched: [], testStatus: "idle" };
+        case "save":
+          return { ...s, lastAction: "Save Context", savedContexts: s.savedContexts + 1 };
+        default:
+          return s;
+      }
+    });
+  }, []);
 
-  const { health } = state;
+  // Resolve the mock "Test" run shortly after it starts.
+  useEffect(() => {
+    if (status.testStatus !== "running") return;
+    const t = setTimeout(() => setStatus((s) => ({ ...s, testStatus: "passed" })), 900);
+    return () => clearTimeout(t);
+  }, [status.testStatus]);
+
   return (
-    <div className="status status--ok">
-      <strong>Backend connected ✓</strong>
-      <ul className="status__meta">
-        <li>Service: {health.service} v{health.version}</li>
-        <li>
-          AI: {health.ai_configured ? "configured" : "not configured (set env vars)"}
-        </li>
-        <li>Default model tier: {health.config.default_tier}</li>
-      </ul>
+    <div className="app">
+      <Header conn={conn} streaming={streaming} />
+      <div className="workspace">
+        <RepoTree />
+        <ChatPanel messages={messages} streaming={streaming} onSend={sendMessage} />
+        <StatusPanel status={status} busy={streaming} onAction={handleAction} />
+      </div>
     </div>
   );
 }

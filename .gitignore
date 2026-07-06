@@ -29,3 +29,6 @@ frontend/vite.config.d.ts
 
 # Hephaestus runtime cache (context summaries, etc.)
 .hephaestus/
+
+# Browser-automation screenshots / scratch
+.playwright-mcp/

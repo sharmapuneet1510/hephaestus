@@ -1,0 +1,145 @@
+/* ============================================================================
+   Hephaestus — "The Forge" design system
+   Warm heated-iron surfaces, molten-ember accents, verdigris for success.
+   ========================================================================== */
+
+:root {
+  /* Surfaces (warm near-black graphite, not blue-gray) */
+  --void: #100e0c;
+  --iron: #181411;
+  --iron-raised: #211b16;
+  --iron-hover: #2a221b;
+  --line: #372c22;
+  --line-soft: #2a2119;
+
+  /* Text */
+  --parchment: #f3ebe0;
+  --ash: #a89a89;
+  --ash-dim: #6f6458;
+
+  /* Molten ember accent */
+  --ember: #ff6a1a;
+  --ember-hot: #ff3d00;
+  --ember-core: #ffcf6b;
+  --ember-glow: rgba(255, 106, 26, 0.35);
+
+  /* States */
+  --patina: #4fc79a;
+  --patina-dim: rgba(79, 199, 154, 0.15);
+  --scald: #ff5c4d;
+  --scald-dim: rgba(255, 92, 77, 0.15);
+
+  --font-display: "Bricolage Grotesque Variable", "IBM Plex Sans", sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--void);
+  color: var(--parchment);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* Forge atmosphere: an ember glow rising from the base + fine grain. */
+  background-image:
+    radial-gradient(120% 70% at 50% 118%, var(--ember-glow) 0%, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+::selection {
+  background: var(--ember-glow);
+  color: var(--ember-core);
+}
+
+/* Scrollbars tuned to the forge */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 6px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--line-soft);
+}
+
+/* ---- Typography helpers ---- */
+.mono {
+  font-family: var(--font-mono);
+}
+.label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ash-dim);
+}
+
+/* ============================================================================
+   Syntax highlighting (rehype-highlight -> .hljs) tuned to the forge palette.
+   ========================================================================== */
+.hljs {
+  color: #e7dccb;
+  background: transparent;
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--ash-dim);
+  font-style: italic;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-doctag {
+  color: var(--ember);
+}
+.hljs-string,
+.hljs-regexp,
+.hljs-addition {
+  color: var(--patina);
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-meta {
+  color: var(--ember-core);
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-section {
+  color: #ffe1a6;
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-variable,
+.hljs-template-variable {
+  color: #d7b3ff;
+}
+.hljs-built_in,
+.hljs-class .hljs-title,
+.hljs-type {
+  color: #7fd4ff;
+}
+.hljs-deletion {
+  color: var(--scald);
+}
