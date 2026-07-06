@@ -28,6 +28,7 @@ class Plan(BaseModel):
     risks: list[str] = []
     tests: list[str] = []
     expected_output: str
+    failing_tests: Optional[str] = None  # failure context fed from TASK 9 (9.4)
 
 
 class PlanState:
@@ -69,8 +70,13 @@ def build_plan(
     config: AppConfig,
     repo_path: Optional[str],
     engine: ContextEngine,
+    failing_tests: Optional[str] = None,
 ) -> Plan:
-    """Build a structured plan from a change request (SUBTASK 7.1)."""
+    """Build a structured plan from a change request (SUBTASK 7.1).
+
+    If ``failing_tests`` is provided (from the last test run — 9.4), it is folded
+    into the plan so the fix targets the failure.
+    """
     goal = message.strip() or "the requested change"
 
     files: list[str] = []
@@ -84,21 +90,26 @@ def build_plan(
     focus_note = f" within `{module}`" if module else ""
     tests = sorted(set(config.test_commands.values())) or ["run the project's tests"]
 
+    steps = [
+        f"Inspect the relevant files{focus_note} and summarize current behavior.",
+        "Draft the change and show a diff for review.",
+        "Apply the change once approved.",
+        "Run the affected tests and report results.",
+    ]
+    if failing_tests:
+        steps.insert(0, f"Address the failing tests: {failing_tests}")
+
     return Plan(
         goal=goal,
         files_to_change=files,
-        steps=[
-            f"Inspect the relevant files{focus_note} and summarize current behavior.",
-            "Draft the change and show a diff for review.",
-            "Apply the change once approved.",
-            "Run the affected tests and report results.",
-        ],
+        steps=steps,
         risks=[
             "The change may affect callers of any modified symbols.",
             "Existing tests may not cover the touched area.",
         ],
         tests=tests,
         expected_output=f"A minimal, reviewed change addressing: {goal}",
+        failing_tests=failing_tests,
     )
 
 
@@ -114,7 +125,18 @@ def create_plan(request: PlanRequest, http_request: Request) -> dict:
     repo = http_request.app.state.session_store.load_repo()
     engine: ContextEngine = http_request.app.state.context_engine
 
-    plan = build_plan(request.message, request.module, config, repo.path if repo else None, engine)
+    # Fold the last failing test run into the plan (SUBTASK 9.4).
+    last_test = http_request.app.state.test_state.last
+    failing = last_test.summary if last_test and not last_test.passed else None
+
+    plan = build_plan(
+        request.message,
+        request.module,
+        config,
+        repo.path if repo else None,
+        engine,
+        failing_tests=failing,
+    )
     http_request.app.state.plan_state.set(plan)
     return {"plan": plan}
 

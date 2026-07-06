@@ -37,10 +37,11 @@ vi.mock("./api", () => ({
   tryEdit: vi.fn().mockResolvedValue({ ok: true, message: "ready to apply edits." }),
   revertEdits: vi.fn().mockResolvedValue([]),
   editStatus: vi.fn().mockResolvedValue([]),
+  runTests: vi.fn(),
 }));
 
 import { App } from "./App";
-import { fetchRepository, generatePlan, loadRepository, streamChat } from "./api";
+import { fetchRepository, generatePlan, loadRepository, runTests, streamChat } from "./api";
 import type { Plan, RepoMetadata, TreeNode } from "./api";
 
 const PLAN: Plan = {
@@ -146,6 +147,30 @@ describe("Chat UI MVP", () => {
       expect(screen.getByText(/ready to apply edits/i)).toBeInTheDocument()
     );
     expect(generatePlan).toHaveBeenCalledWith("add login", null);
+  });
+
+  it("runs tests and reports a failure summary (9.2 / 9.3)", async () => {
+    vi.mocked(fetchRepository).mockResolvedValue(REPO_META);
+    vi.mocked(loadRepository).mockResolvedValue({ metadata: REPO_META, tree: REPO_TREE });
+    vi.mocked(runTests).mockResolvedValue({
+      command: "pytest",
+      exit_code: 1,
+      passed: false,
+      duration_ms: 42,
+      summary: "1 failed, 2 passed",
+      output: "FAILED tests/test_x.py::test_it",
+      failed_files: ["tests/test_x.py"],
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByTestId("repo-meta");
+
+    const statusPanel = screen.getByLabelText(/task and status/i);
+    await user.click(within(statusPanel).getByRole("button", { name: /^test$/i }));
+
+    await waitFor(() => expect(within(statusPanel).getByText("failed")).toBeInTheDocument());
+    expect(screen.getByText(/tests failed/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/1 failed, 2 passed/i).length).toBeGreaterThan(0);
   });
 
   it("sets and clears module focus via chat commands (6.2 / 6.4)", async () => {

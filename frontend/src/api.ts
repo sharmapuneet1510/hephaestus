@@ -73,6 +73,36 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- Test runner (TASK 9) ----
+export interface TestResult {
+  command: string;
+  exit_code: number;
+  passed: boolean;
+  duration_ms: number;
+  summary: string;
+  output: string;
+  failed_files: string[];
+}
+
+/** Run the detected (or given) test command for the loaded repo. */
+export async function runTests(command: string | null = null): Promise<TestResult> {
+  const resp = await fetch("/api/test", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ command }),
+  });
+  if (!resp.ok) {
+    let detail = `Test run failed (${resp.status})`;
+    try {
+      detail = ((await resp.json()) as { detail?: string }).detail ?? detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as TestResult;
+}
+
 // ---- File editing (TASK 8) ----
 export interface ApplyResult {
   path: string;

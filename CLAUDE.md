@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1–8 are complete**: config/env/health, a three-panel "Forge"
+Early, spec-driven development. **TASK 1–9 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
 routing, a repository loader, a context engine (chunking + markdown/JSON/TOON/graph + refresh), module
-focus, the plan-first workflow, and file editing with diff review (`app/edit.py`: workspace-safe
-read, guarded apply, unified diff, revert, touched-file tracking). TASK 9 (Test Runner) onward is not
-yet built. Backend stack is **Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend
-is React + TypeScript + Vite + Monaco.
+focus, the plan-first workflow, file editing with diff review (`app/edit.py`), and a test runner
+(`app/testrunner.py`: detect command, controlled executor, pass/fail summary, failures fed into the
+next plan). TASK 10 (Agent Task Execution) onward is not yet built. Backend stack is
+**Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend is React + TS + Vite + Monaco.
 
 Plan-first is enforced end to end: `app/plan.py` builds a structured `Plan`, holds it in `PlanState`
 (pending → approved); `app/edit.py`'s `POST /api/edit/apply` refuses to write unless a plan is

@@ -311,22 +311,36 @@ STATUS: DONE — GET /api/edit/status lists touched files; the status panel's Fi
 
 TASK 9: Test Runner
 PROGRESS: 8%
+STATUS: DONE (2026-07-06) — app/testrunner.py (detect, controlled executor,
+  summary, TestState) + Test button wiring + plan integration. Verified by
+  test_testrunner.py (real subprocesses), App.test.tsx, and live detect via curl.
 
 SUBTASK 9.1: Detect test commands
 OUTPUT: App identifies npm test, mvn test, gradle test, pytest, or configured commands
 TEST: Sample projects detect correct command
+STATUS: DONE — detect_test_command() maps marker files (root + one level deep) to
+  config.test_commands; GET /api/test/detect. Verified in test_testrunner.py and
+  live (node -> npm test, python -> pytest).
 
 SUBTASK 9.2: Run targeted tests
 OUTPUT: Relevant test command executes after implementation
 TEST: Command output appears in UI
+STATUS: DONE — run_command() (subprocess, timeout, capture); POST /api/test runs
+  the detected/allowlisted command (no arbitrary shell); Test button shows output
+  in chat. Verified in test_testrunner.py (real passing/failing runs) + App.test.tsx.
 
 SUBTASK 9.3: Capture test result summary
 OUTPUT: Passed/failed status, duration, failed files, and error snippet
 TEST: Failing sample test produces clear failure summary
+STATUS: DONE — TestResult{passed, exit_code, duration_ms, summary, failed_files,
+  output}; summary + failed-file extraction (pytest-aware). Verified in
+  test_testrunner.py; the failed badge + summary render in the UI (App.test.tsx).
 
 SUBTASK 9.4: Feed failures back into assistant
 OUTPUT: Failed tests become context for next fix plan
 TEST: Fix request includes failure summary in prompt context
+STATUS: DONE — the last failing run is stored in TestState; POST /api/plan folds
+  it into the plan (failing_tests + a fix step). Verified in test_testrunner.py.
 
 ---
 

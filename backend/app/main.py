@@ -26,6 +26,8 @@ from app.plan import default_plan_state
 from app.plan import router as plan_router
 from app.repo import default_session_store
 from app.repo import router as repo_router
+from app.testrunner import default_test_state
+from app.testrunner import router as test_router
 
 # Built frontend (produced by `npm run build`). When present, the backend serves
 # it single-origin so no dev proxy is needed — the production deployment shape.
@@ -59,6 +61,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.context_engine = default_context_engine()
     app.state.plan_state = default_plan_state()
     app.state.edit_session = default_edit_session()
+    app.state.test_state = default_test_state()
 
     app.add_middleware(
         CORSMiddleware,
@@ -84,6 +87,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(context_router)
     app.include_router(plan_router)
     app.include_router(edit_router)
+    app.include_router(test_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.

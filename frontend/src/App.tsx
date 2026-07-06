@@ -6,6 +6,7 @@ import {
   fetchHealth,
   generatePlan,
   revertEdits,
+  runTests,
   streamChat,
   tryEdit,
   type Plan,
@@ -269,25 +270,44 @@ export function App() {
     syncEdits();
   }, [addNote, syncEdits]);
 
-  // Action-bar handlers. Plan/Apply are wired to TASK 7; Save Context to TASK 5;
-  // Test/Revert remain placeholders (real workflows land in TASK 8/9).
+  // Run the project's tests via the backend (TASK 9), report pass/fail + output.
+  const runTest = useCallback(async () => {
+    setStatus((s) => ({ ...s, lastAction: "Test" }));
+    if (!repo) {
+      addNote("Load a repository first to run tests.");
+      return;
+    }
+    setStatus((s) => ({ ...s, testStatus: "running", currentTask: "Running tests…" }));
+    try {
+      const res = await runTests();
+      setStatus((s) => ({
+        ...s,
+        testStatus: res.passed ? "passed" : "failed",
+        currentTask: `Tests: ${res.summary}`,
+      }));
+      const body = res.output ? `\n\n\`\`\`\n${res.output.slice(-1500)}\n\`\`\`` : "";
+      addNote(
+        `**Tests ${res.passed ? "passed" : "failed"}** — \`${res.command}\` (${res.duration_ms} ms)` +
+          `\n\n${res.summary}${body}`
+      );
+    } catch (err) {
+      setStatus((s) => ({ ...s, testStatus: "failed", currentTask: "Test run failed" }));
+      addNote(`⚠️ ${err instanceof Error ? err.message : "Test run failed"}`);
+    }
+  }, [repo, addNote]);
+
+  // Action-bar handlers. Plan/Apply (TASK 7), Save Context (TASK 5), Revert
+  // (TASK 8), and Test (TASK 9) are all wired to the backend.
   const handleAction = useCallback(
     (action: ActionKind) => {
       if (action === "save") return void saveContext();
       if (action === "plan") return void runPlan();
       if (action === "apply") return void runApply();
       if (action === "revert") return void runRevert();
-      if (action === "test") setStatus((s) => ({ ...s, lastAction: "Test", testStatus: "running" }));
+      if (action === "test") return void runTest();
     },
-    [saveContext, runPlan, runApply, runRevert]
+    [saveContext, runPlan, runApply, runRevert, runTest]
   );
-
-  // Resolve the mock "Test" run shortly after it starts.
-  useEffect(() => {
-    if (status.testStatus !== "running") return;
-    const t = setTimeout(() => setStatus((s) => ({ ...s, testStatus: "passed" })), 900);
-    return () => clearTimeout(t);
-  }, [status.testStatus]);
 
   return (
     <div className="app">
