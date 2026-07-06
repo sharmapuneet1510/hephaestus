@@ -32,11 +32,23 @@ vi.mock("./api", () => ({
   fetchRepository: vi.fn().mockResolvedValue(null),
   loadRepository: vi.fn(),
   buildContext: vi.fn().mockResolvedValue({ file_count: 2, chunk_count: 3 }),
+  generatePlan: vi.fn(),
+  approvePlan: vi.fn().mockResolvedValue(undefined),
+  tryEdit: vi.fn().mockResolvedValue({ ok: true, message: "edit execution arrives in TASK 8." }),
 }));
 
 import { App } from "./App";
-import { fetchRepository, loadRepository, streamChat } from "./api";
-import type { RepoMetadata, TreeNode } from "./api";
+import { fetchRepository, generatePlan, loadRepository, streamChat } from "./api";
+import type { Plan, RepoMetadata, TreeNode } from "./api";
+
+const PLAN: Plan = {
+  goal: "add login",
+  files_to_change: ["backend/auth.py"],
+  steps: ["Inspect files", "Draft change", "Run tests"],
+  risks: ["May affect callers"],
+  tests: ["pytest"],
+  expected_output: "A reviewed change",
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -97,19 +109,41 @@ describe("Chat UI MVP", () => {
     render(<App />);
 
     const statusPanel = screen.getByLabelText(/task and status/i);
-    const lastAction = screen.getByTestId("last-action");
-    expect(lastAction).toHaveTextContent("—");
+    expect(screen.getByTestId("last-action")).toHaveTextContent("—");
+    // Apply is disabled until a plan exists (SUBTASK 7.2).
+    expect(within(statusPanel).getByRole("button", { name: /^apply$/i })).toBeDisabled();
 
-    await user.click(within(statusPanel).getByRole("button", { name: /plan/i }));
-    expect(screen.getByTestId("last-action")).toHaveTextContent("Plan");
-
-    await user.click(within(statusPanel).getByRole("button", { name: /^apply$/i }));
-    expect(screen.getByTestId("last-action")).toHaveTextContent("Apply");
-    expect(within(statusPanel).getByText("src/example.ts")).toBeInTheDocument();
+    await user.click(within(statusPanel).getByRole("button", { name: /^test$/i }));
+    expect(screen.getByTestId("last-action")).toHaveTextContent("Test");
 
     await user.click(within(statusPanel).getByRole("button", { name: /save context/i }));
     expect(screen.getByTestId("last-action")).toHaveTextContent("Save Context");
     expect(screen.getByTestId("last-action")).toHaveTextContent(/1 context/i);
+  });
+
+  it("Plan generates a plan and enables Apply; Apply passes the edit guard (7.1/7.2/7.4)", async () => {
+    vi.mocked(generatePlan).mockResolvedValue(PLAN);
+    const user = userEvent.setup();
+    render(<App />);
+    const statusPanel = screen.getByLabelText(/task and status/i);
+    const applyBtn = () => within(statusPanel).getByRole("button", { name: /^apply$/i });
+    expect(applyBtn()).toBeDisabled();
+
+    // A message gives Plan something to target.
+    await user.type(screen.getByLabelText("Message"), "add login");
+    await user.click(screen.getByLabelText("Send message"));
+    await waitFor(() => expect(screen.getByText("add login")).toBeInTheDocument());
+
+    await user.click(within(statusPanel).getByRole("button", { name: /plan/i }));
+    // Plan renders and Apply becomes enabled (SUBTASK 7.1 / 7.2).
+    await waitFor(() => expect(applyBtn()).not.toBeDisabled());
+    expect(screen.getByText(/files likely to change/i)).toBeInTheDocument();
+
+    await user.click(applyBtn());
+    await waitFor(() =>
+      expect(screen.getByText(/edit execution arrives in task 8/i)).toBeInTheDocument()
+    );
+    expect(generatePlan).toHaveBeenCalledWith("add login", null);
   });
 
   it("sets and clears module focus via chat commands (6.2 / 6.4)", async () => {

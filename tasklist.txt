@@ -239,22 +239,35 @@ STATUS: DONE — chip "×" and "clear focus"/"unfocus" chat command reset
 
 TASK 7: Plan-First Workflow
 PROGRESS: 8%
+STATUS: DONE (2026-07-06) — app/plan.py (structured plan, PlanState, edit guard)
+  + Plan/Apply UI wiring. Verified by test_plan.py, App.test.tsx, and live
+  (Plan renders a structured plan; Apply enables; edit blocked without approval).
 
 SUBTASK 7.1: Create planning prompt template
 OUTPUT: Standard plan response with goal, files, steps, risks, tests, expected output
 TEST: Change request returns structured plan
+STATUS: DONE — POST /api/plan -> Plan{goal, files_to_change, steps, risks, tests,
+  expected_output}; files populated from the focused module when a repo is loaded.
+  Verified in test_plan.py; rendered in chat via the Plan button.
 
 SUBTASK 7.2: Add plan approval state
 OUTPUT: App stores pending plan before execution
 TEST: Apply button disabled until plan exists
+STATUS: DONE — server PlanState holds the pending plan; frontend pendingPlan
+  disables Apply until a plan exists. Verified in App.test.tsx (Apply disabled
+  until Plan) + live.
 
 SUBTASK 7.3: Add plan refinement flow
 OUTPUT: User can modify request and regenerate plan
 TEST: New plan replaces previous pending plan
+STATUS: DONE — PlanState.set() replaces the pending plan and resets approval;
+  re-clicking Plan regenerates. Verified in test_plan.py (second plan replaces).
 
 SUBTASK 7.4: Prevent direct edit without plan
 OUTPUT: Guard blocks file modification when no approved plan exists
 TEST: Attempted direct edit returns safe error
+STATUS: DONE — POST /api/edit returns 400 unless an approved plan exists (actual
+  editing lands in TASK 8). Verified in test_plan.py + live (curl -> 400).
 
 ---
 

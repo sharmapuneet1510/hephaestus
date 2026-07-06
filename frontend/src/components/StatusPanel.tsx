@@ -12,11 +12,13 @@ const TEST_LABELS: Record<WorkspaceStatus["testStatus"], string> = {
 export function StatusPanel({
   status,
   busy,
+  applyDisabled = false,
   onAction,
   onClearFocus,
 }: {
   status: WorkspaceStatus;
   busy: boolean;
+  applyDisabled?: boolean;
   onAction: (action: ActionKind) => void;
   onClearFocus?: () => void;
 }) {
@@ -93,7 +95,13 @@ export function StatusPanel({
         >
           ⬒ Plan
         </button>
-        <button className="action" type="button" disabled={busy} onClick={() => onAction("apply")}>
+        <button
+          className="action"
+          type="button"
+          disabled={busy || applyDisabled}
+          title={applyDisabled ? "Create a plan first (Plan)" : "Apply the approved plan"}
+          onClick={() => onAction("apply")}
+        >
           Apply
         </button>
         <button className="action" type="button" disabled={busy} onClick={() => onAction("test")}>

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  approvePlan,
   buildContext,
   fetchHealth,
+  generatePlan,
   streamChat,
+  tryEdit,
+  type Plan,
   type RepoMetadata,
   type TreeNode,
 } from "./api";
@@ -24,6 +28,31 @@ const INITIAL_STATUS: WorkspaceStatus = {
 let idCounter = 0;
 const nextId = () => `m${++idCounter}`;
 
+/** Render a structured plan as markdown for the chat (TASK 7.1). */
+function planToMarkdown(plan: Plan): string {
+  const list = (items: string[]) => items.map((i) => `- ${i}`).join("\n");
+  const files = plan.files_to_change.length
+    ? list(plan.files_to_change)
+    : "- _(determined after inspection)_";
+  return [
+    `**Plan**`,
+    ``,
+    `**Goal:** ${plan.goal}`,
+    ``,
+    `**Files likely to change**\n${files}`,
+    ``,
+    `**Steps**\n${plan.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
+    ``,
+    `**Risks**\n${list(plan.risks)}`,
+    ``,
+    `**Tests**\n${list(plan.tests)}`,
+    ``,
+    `**Expected output:** ${plan.expected_output}`,
+    ``,
+    `_Review, then click **Apply** to proceed._`,
+  ].join("\n");
+}
+
 export function App() {
   const [conn, setConn] = useState<ConnState>({ kind: "connecting" });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -31,6 +60,7 @@ export function App() {
   const [status, setStatus] = useState<WorkspaceStatus>(INITIAL_STATUS);
   const [repo, setRepo] = useState<RepoMetadata | null>(null);
   const [repoTree, setRepoTree] = useState<TreeNode | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<Plan | null>(null);
 
   // Directory paths available for module focus (TASK 6).
   const moduleDirs = useMemo(() => {
@@ -168,35 +198,68 @@ export function App() {
     }
   }, [repo, status.moduleFocus]);
 
-  // Action-bar handlers (SUBTASK 2.5). Plan/Apply/Test/Revert are placeholders
-  // (real workflows arrive in later tasks); Save Context is wired to TASK 5.
+  const addNote = useCallback((content: string) => {
+    setMessages((prev) => [...prev, { id: nextId(), role: "assistant", content }]);
+  }, []);
+
+  // Plan-first (TASK 7): generate a structured plan for the latest request.
+  const runPlan = useCallback(async () => {
+    setStatus((s) => ({ ...s, lastAction: "Plan" }));
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastUser) {
+      addNote("Describe the change you want (send a message), then click Plan.");
+      return;
+    }
+    setStatus((s) => ({ ...s, currentTask: "Planning…" }));
+    try {
+      const plan = await generatePlan(lastUser.content, status.moduleFocus);
+      setPendingPlan(plan);
+      addNote(planToMarkdown(plan));
+      setStatus((s) => ({ ...s, currentTask: "Plan ready — review, then Apply" }));
+    } catch {
+      setStatus((s) => ({ ...s, currentTask: "Plan failed" }));
+    }
+  }, [messages, status.moduleFocus, addNote]);
+
+  // Apply approves the pending plan and passes the edit guard (TASK 7.4).
+  const runApply = useCallback(async () => {
+    if (!pendingPlan) return;
+    setStatus((s) => ({ ...s, lastAction: "Apply", currentTask: "Applying…" }));
+    try {
+      await approvePlan();
+      const res = await tryEdit();
+      addNote(res.message);
+      setStatus((s) => ({
+        ...s,
+        currentTask: "Plan applied",
+        filesTouched: Array.from(new Set([...s.filesTouched, ...pendingPlan.files_to_change])),
+      }));
+    } catch (err) {
+      addNote(`⚠️ ${err instanceof Error ? err.message : "Apply blocked"}`);
+      setStatus((s) => ({ ...s, currentTask: "Apply blocked" }));
+    }
+  }, [pendingPlan, addNote]);
+
+  // Action-bar handlers. Plan/Apply are wired to TASK 7; Save Context to TASK 5;
+  // Test/Revert remain placeholders (real workflows land in TASK 8/9).
   const handleAction = useCallback(
     (action: ActionKind) => {
-      if (action === "save") {
-        void saveContext();
-        return;
-      }
+      if (action === "save") return void saveContext();
+      if (action === "plan") return void runPlan();
+      if (action === "apply") return void runApply();
       setStatus((s) => {
         switch (action) {
-          case "plan":
-            return { ...s, lastAction: "Plan", currentTask: "Planning change" };
-          case "apply":
-            return {
-              ...s,
-              lastAction: "Apply",
-              currentTask: "Applied edit",
-              filesTouched: Array.from(new Set([...s.filesTouched, "src/example.ts"])),
-            };
           case "test":
             return { ...s, lastAction: "Test", testStatus: "running" };
           case "revert":
+            setPendingPlan(null);
             return { ...s, lastAction: "Revert", filesTouched: [], testStatus: "idle" };
           default:
             return s;
         }
       });
     },
-    [saveContext]
+    [saveContext, runPlan, runApply]
   );
 
   // Resolve the mock "Test" run shortly after it starts.
@@ -219,6 +282,7 @@ export function App() {
         <StatusPanel
           status={status}
           busy={streaming}
+          applyDisabled={!pendingPlan}
           onAction={handleAction}
           onClearFocus={() => setStatus((s) => ({ ...s, moduleFocus: null }))}
         />

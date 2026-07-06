@@ -83,6 +83,48 @@ export interface ContextResult {
   data?: unknown;
 }
 
+// ---- Plan-first workflow (TASK 7) ----
+export interface Plan {
+  goal: string;
+  files_to_change: string[];
+  steps: string[];
+  risks: string[];
+  tests: string[];
+  expected_output: string;
+}
+
+/** Generate a structured plan for a change request. */
+export async function generatePlan(message: string, module: string | null = null): Promise<Plan> {
+  const resp = await fetch("/api/plan", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, module }),
+  });
+  if (!resp.ok) throw new Error(`Plan failed (${resp.status})`);
+  return ((await resp.json()) as { plan: Plan }).plan;
+}
+
+/** Approve the current pending plan (required before editing). */
+export async function approvePlan(): Promise<void> {
+  const resp = await fetch("/api/plan/approve", { method: "POST" });
+  if (!resp.ok) throw new Error(`Approve failed (${resp.status})`);
+}
+
+/** Attempt an edit — blocked by the backend unless an approved plan exists. */
+export async function tryEdit(): Promise<{ ok: boolean; message: string }> {
+  const resp = await fetch("/api/edit", { method: "POST" });
+  if (!resp.ok) {
+    let detail = `Edit blocked (${resp.status})`;
+    try {
+      detail = ((await resp.json()) as { detail?: string }).detail ?? detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as { ok: boolean; message: string };
+}
+
 /** Build context for the loaded repo (throws if none is loaded / on failure). */
 export async function buildContext(
   module: string | null = null,
