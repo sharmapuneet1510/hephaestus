@@ -273,26 +273,39 @@ STATUS: DONE — POST /api/edit returns 400 unless an approved plan exists (actu
 
 TASK 8: File Editing and Diff Review
 PROGRESS: 10%
+STATUS: DONE (2026-07-06) — app/edit.py (workspace-safe read, guarded apply,
+  unified diff, revert, tracking) + DiffView + Revert/status UI wiring. Verified
+  by test_edit.py (7 tests), DiffView.test.tsx, and live curl (apply/diff/revert).
 
 SUBTASK 8.1: Implement workspace file reader
 OUTPUT: App can read files inside loaded repo only
 TEST: Reading outside workspace is blocked
+STATUS: DONE — resolve_in_workspace() rejects paths outside the repo; GET /api/file
+  reads within it. Verified in test_edit.py + live ("../../etc/passwd" -> 400).
 
 SUBTASK 8.2: Implement patch application
 OUTPUT: Assistant can apply controlled patches
 TEST: Sample patch changes expected file only
+STATUS: DONE — POST /api/edit/apply writes new content (behind the plan-first
+  guard). Verified: only the target file changes (test_edit.py + live).
 
 SUBTASK 8.3: Add diff viewer
 OUTPUT: User sees before/after diff for changed files
 TEST: Diff accurately displays changed lines
+STATUS: DONE — unified_diff() (difflib); POST /api/edit/preview; DiffView renders
+  +/- lines. Verified in test_edit.py, DiffView.test.tsx, and live diff output.
 
 SUBTASK 8.4: Add revert capability
 OUTPUT: User can revert assistant-applied changes
 TEST: Revert restores original file content
+STATUS: DONE — EditSession backups; POST /api/edit/revert restores originals
+  (and removes created files); Revert button wired. Verified in test_edit.py + live.
 
 SUBTASK 8.5: Track modified files
 OUTPUT: Status panel lists touched files
 TEST: Modified files list updates after patch
+STATUS: DONE — GET /api/edit/status lists touched files; the status panel's Files
+  Touched syncs from it. Verified in test_edit.py + live (list then empty on revert).
 
 ---
 

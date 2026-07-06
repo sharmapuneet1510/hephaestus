@@ -54,6 +54,15 @@ def default_plan_state() -> PlanState:
     return PlanState()
 
 
+def require_approved_plan(state: "PlanState") -> None:
+    """Guard used by editing endpoints — enforce plan-first (SUBTASK 7.4)."""
+    if not (state.plan and state.approved):
+        raise HTTPException(
+            status_code=400,
+            detail="No approved plan. Create a plan and approve it before editing.",
+        )
+
+
 def build_plan(
     message: str,
     module: Optional[str],
@@ -127,12 +136,6 @@ def approve_plan(http_request: Request) -> dict:
 
 @router.post("/api/edit")
 def edit(http_request: Request) -> dict:
-    """Guarded edit entry point (SUBTASK 7.4). Blocks edits without an approved plan."""
-    state: PlanState = http_request.app.state.plan_state
-    if not (state.plan and state.approved):
-        raise HTTPException(
-            status_code=400,
-            detail="No approved plan. Create a plan and approve it before editing.",
-        )
-    # Actual file editing is implemented in TASK 8.
-    return {"ok": True, "message": "Plan approved — edit execution arrives in TASK 8."}
+    """Plan-first gate probe (SUBTASK 7.4). Real editing is in app/edit.py (TASK 8)."""
+    require_approved_plan(http_request.app.state.plan_state)
+    return {"ok": True, "message": "Plan approved — ready to apply edits."}

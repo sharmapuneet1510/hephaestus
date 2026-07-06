@@ -4,17 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1–7 are complete**: config/env/health, a three-panel "Forge"
+Early, spec-driven development. **TASK 1–8 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
 routing, a repository loader, a context engine (chunking + markdown/JSON/TOON/graph + refresh), module
-focus, and the plan-first workflow (structured plan endpoint, plan-approval state, Apply-disabled-
-until-plan, and an edit guard). TASK 8 (File Editing and Diff Review) onward is not yet built.
-Backend stack is **Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend is
-React + TypeScript + Vite + Monaco.
+focus, the plan-first workflow, and file editing with diff review (`app/edit.py`: workspace-safe
+read, guarded apply, unified diff, revert, touched-file tracking). TASK 9 (Test Runner) onward is not
+yet built. Backend stack is **Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend
+is React + TypeScript + Vite + Monaco.
 
 Plan-first is enforced end to end: `app/plan.py` builds a structured `Plan`, holds it in `PlanState`
-(pending → approved), and `POST /api/edit` returns 400 unless a plan is approved — actual file
-editing (applying edits, diffs, revert) arrives in TASK 8.
+(pending → approved); `app/edit.py`'s `POST /api/edit/apply` refuses to write unless a plan is
+approved, applies inside the workspace only (`resolve_in_workspace`), returns a unified diff, and
+supports `POST /api/edit/revert`. The frontend has a `DiffView` renderer; a full UI apply loop
+activates once the assistant proposes patches (needs the live internal AI — TASK 3).
 
 **AI client:** built on the official **`anthropic` SDK** (`AsyncAnthropic`) pointed at the internal
 endpoint via `base_url`. Assumption: the internal AI API speaks the **Anthropic Messages API** shape

@@ -73,6 +73,47 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- File editing (TASK 8) ----
+export interface ApplyResult {
+  path: string;
+  created: boolean;
+  diff: string;
+  touched: string[];
+}
+
+/** Apply an edit to a file (blocked by the backend unless a plan is approved). */
+export async function applyEdit(path: string, newContent: string): Promise<ApplyResult> {
+  const resp = await fetch("/api/edit/apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, new_content: newContent }),
+  });
+  if (!resp.ok) {
+    let detail = `Edit blocked (${resp.status})`;
+    try {
+      detail = ((await resp.json()) as { detail?: string }).detail ?? detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as ApplyResult;
+}
+
+/** Revert all edits applied this session. Returns the reverted paths. */
+export async function revertEdits(): Promise<string[]> {
+  const resp = await fetch("/api/edit/revert", { method: "POST" });
+  if (!resp.ok) throw new Error(`Revert failed (${resp.status})`);
+  return ((await resp.json()) as { reverted: string[] }).reverted;
+}
+
+/** List files touched in this edit session (SUBTASK 8.5). */
+export async function editStatus(): Promise<string[]> {
+  const resp = await fetch("/api/edit/status");
+  if (!resp.ok) return [];
+  return ((await resp.json()) as { files: string[] }).files;
+}
+
 // ---- Context engine (TASK 5) ----
 export interface ContextResult {
   module: string | null;

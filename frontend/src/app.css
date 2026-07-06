@@ -553,6 +553,38 @@
   color: var(--scald);
 }
 
+/* ---- Diff view (TASK 8.3) ---- */
+.diff {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  background: #0d0b09;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+.diff code {
+  display: block;
+}
+.diff-line {
+  padding: 0 12px;
+  white-space: pre;
+  color: var(--ash);
+}
+.diff-add {
+  background: rgba(79, 199, 154, 0.14);
+  color: var(--patina);
+}
+.diff-del {
+  background: rgba(255, 92, 77, 0.14);
+  color: var(--scald);
+}
+.diff-hunk {
+  color: var(--ember);
+  background: rgba(255, 106, 26, 0.08);
+}
+
 /* ---- Repo loader ---- */
 .repo-load {
   display: flex;

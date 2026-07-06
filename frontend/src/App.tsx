@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   approvePlan,
   buildContext,
+  editStatus,
   fetchHealth,
   generatePlan,
+  revertEdits,
   streamChat,
   tryEdit,
   type Plan,
@@ -77,11 +79,22 @@ export function App() {
     return dirs;
   }, [repoTree]);
 
-  const handleRepoLoaded = useCallback((meta: RepoMetadata | null, tree: TreeNode | null) => {
-    setRepo(meta);
-    setRepoTree(tree);
-    setStatus((s) => ({ ...s, moduleFocus: null })); // reset focus for the new repo
+  // Sync the touched-files list from the backend edit session (SUBTASK 8.5).
+  const syncEdits = useCallback(() => {
+    editStatus()
+      .then((files) => setStatus((s) => ({ ...s, filesTouched: files })))
+      .catch(() => {});
   }, []);
+
+  const handleRepoLoaded = useCallback(
+    (meta: RepoMetadata | null, tree: TreeNode | null) => {
+      setRepo(meta);
+      setRepoTree(tree);
+      setStatus((s) => ({ ...s, moduleFocus: null })); // reset focus for the new repo
+      syncEdits();
+    },
+    [syncEdits]
+  );
 
   // Startup: confirm backend connection (carried over from TASK 1).
   useEffect(() => {
@@ -221,7 +234,9 @@ export function App() {
     }
   }, [messages, status.moduleFocus, addNote]);
 
-  // Apply approves the pending plan and passes the edit guard (TASK 7.4).
+  // Apply approves the pending plan and passes the edit guard (TASK 7.4). Actual
+  // per-file patches are applied via applyEdit once the assistant proposes them
+  // (TASK 8 backend); here we open the gate and sync touched files.
   const runApply = useCallback(async () => {
     if (!pendingPlan) return;
     setStatus((s) => ({ ...s, lastAction: "Apply", currentTask: "Applying…" }));
@@ -229,16 +244,30 @@ export function App() {
       await approvePlan();
       const res = await tryEdit();
       addNote(res.message);
-      setStatus((s) => ({
-        ...s,
-        currentTask: "Plan applied",
-        filesTouched: Array.from(new Set([...s.filesTouched, ...pendingPlan.files_to_change])),
-      }));
+      syncEdits();
+      setStatus((s) => ({ ...s, currentTask: "Plan applied" }));
     } catch (err) {
       addNote(`⚠️ ${err instanceof Error ? err.message : "Apply blocked"}`);
       setStatus((s) => ({ ...s, currentTask: "Apply blocked" }));
     }
-  }, [pendingPlan, addNote]);
+  }, [pendingPlan, addNote, syncEdits]);
+
+  // Revert restores any edited files via the backend (SUBTASK 8.4).
+  const runRevert = useCallback(async () => {
+    setPendingPlan(null);
+    setStatus((s) => ({ ...s, lastAction: "Revert", testStatus: "idle" }));
+    try {
+      const reverted = await revertEdits();
+      addNote(
+        reverted.length
+          ? `Reverted ${reverted.length} file(s): ${reverted.join(", ")}.`
+          : "Nothing to revert."
+      );
+    } catch {
+      /* ignore */
+    }
+    syncEdits();
+  }, [addNote, syncEdits]);
 
   // Action-bar handlers. Plan/Apply are wired to TASK 7; Save Context to TASK 5;
   // Test/Revert remain placeholders (real workflows land in TASK 8/9).
@@ -247,19 +276,10 @@ export function App() {
       if (action === "save") return void saveContext();
       if (action === "plan") return void runPlan();
       if (action === "apply") return void runApply();
-      setStatus((s) => {
-        switch (action) {
-          case "test":
-            return { ...s, lastAction: "Test", testStatus: "running" };
-          case "revert":
-            setPendingPlan(null);
-            return { ...s, lastAction: "Revert", filesTouched: [], testStatus: "idle" };
-          default:
-            return s;
-        }
-      });
+      if (action === "revert") return void runRevert();
+      if (action === "test") setStatus((s) => ({ ...s, lastAction: "Test", testStatus: "running" }));
     },
-    [saveContext, runPlan, runApply]
+    [saveContext, runPlan, runApply, runRevert]
   );
 
   // Resolve the mock "Test" run shortly after it starts.

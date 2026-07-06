@@ -34,7 +34,9 @@ vi.mock("./api", () => ({
   buildContext: vi.fn().mockResolvedValue({ file_count: 2, chunk_count: 3 }),
   generatePlan: vi.fn(),
   approvePlan: vi.fn().mockResolvedValue(undefined),
-  tryEdit: vi.fn().mockResolvedValue({ ok: true, message: "edit execution arrives in TASK 8." }),
+  tryEdit: vi.fn().mockResolvedValue({ ok: true, message: "ready to apply edits." }),
+  revertEdits: vi.fn().mockResolvedValue([]),
+  editStatus: vi.fn().mockResolvedValue([]),
 }));
 
 import { App } from "./App";
@@ -141,7 +143,7 @@ describe("Chat UI MVP", () => {
 
     await user.click(applyBtn());
     await waitFor(() =>
-      expect(screen.getByText(/edit execution arrives in task 8/i)).toBeInTheDocument()
+      expect(screen.getByText(/ready to apply edits/i)).toBeInTheDocument()
     );
     expect(generatePlan).toHaveBeenCalledWith("add login", null);
   });

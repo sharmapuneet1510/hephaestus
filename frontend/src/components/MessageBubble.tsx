@@ -5,6 +5,13 @@ import rehypeHighlight from "rehype-highlight";
 import type { Components } from "react-markdown";
 import type { ChatMessage } from "../types";
 import { CodeBlock } from "./CodeBlock";
+import { DiffView } from "./DiffView";
+
+/** Heuristic: does this assistant content look like a unified diff? */
+function isUnifiedDiff(content: string): boolean {
+  const t = content.trimStart();
+  return t.startsWith("--- ") || t.startsWith("diff --git") || /\n@@ .* @@/.test(content);
+}
 
 // Route fenced code blocks (rendered by react-markdown as <pre><code>) through
 // our CodeBlock. Inline code falls through to default rendering.
@@ -35,7 +42,9 @@ export function MessageBubble({ message }: { message: ChatMessage }) {
       <div className="msg__avatar">{isAssistant ? "H" : "you"}</div>
       <div className="msg__body">
         <div className="msg__role">{isAssistant ? "Hephaestus" : "You"}</div>
-        {isAssistant ? (
+        {isAssistant && !message.streaming && isUnifiedDiff(message.content) ? (
+          <DiffView diff={message.content} />
+        ) : isAssistant ? (
           <div className="md">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

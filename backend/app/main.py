@@ -20,6 +20,8 @@ from app.chat import router as chat_router
 from app.config import AppConfig, ConfigError, load_config
 from app.context import default_context_engine
 from app.context import router as context_router
+from app.edit import default_edit_session
+from app.edit import router as edit_router
 from app.plan import default_plan_state
 from app.plan import router as plan_router
 from app.repo import default_session_store
@@ -56,6 +58,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.session_store = default_session_store()
     app.state.context_engine = default_context_engine()
     app.state.plan_state = default_plan_state()
+    app.state.edit_session = default_edit_session()
 
     app.add_middleware(
         CORSMiddleware,
@@ -80,6 +83,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(repo_router)
     app.include_router(context_router)
     app.include_router(plan_router)
+    app.include_router(edit_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.
