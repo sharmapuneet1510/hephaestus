@@ -159,30 +159,46 @@ STATUS: DONE — SessionStore persists metadata to .hephaestus/session.json;
 
 TASK 5: Context Engine
 PROGRESS: 12%
+STATUS: DONE (2026-07-06) — app/context.py (chunking, metadata extraction,
+  markdown/JSON/TOON/graph renderers, hash-based refresh) + POST
+  /api/context/build; Save Context button wired. Verified by test_context.py and
+  live (Save Context -> "112 files, 164 chunks" on the Hephaestus repo).
 
 SUBTASK 5.1: Implement file chunking
 OUTPUT: Large files split into token/line-aware chunks
 TEST: Large file produces multiple chunks with stable IDs
+STATUS: DONE — chunk_content() splits by chunk_size_lines with stable IDs
+  ("path#start-end"). Verified in test_context.py (1000 lines -> 3 chunks).
 
 SUBTASK 5.2: Generate markdown summaries
 OUTPUT: Per-file and per-module markdown-style summaries in local cache
 TEST: Summary exists for selected sample files
+STATUS: DONE — render_markdown() emits per-module rollup + per-file summaries.
+  Verified in test_context.py; served via the build endpoint (format=markdown).
 
 SUBTASK 5.3: Generate JSON metadata
 OUTPUT: JSON containing file path, type, symbols, imports, exports, dependencies
 TEST: JSON validates against schema
+STATUS: DONE — extract_metadata() (regex per language) -> FileMetadata (pydantic).
+  Verified: model_dump() round-trips through FileMetadata; graph resolves deps.
 
 SUBTASK 5.4: Generate TOON-style compressed context
 OUTPUT: Compact context representation for AI prompts
 TEST: TOON output is shorter than markdown summary and keeps key facts
+STATUS: DONE — render_toon() (one dense line per file). Verified shorter than
+  markdown while keeping path + key symbols.
 
 SUBTASK 5.5: Generate graph-style dependency context
 OUTPUT: Nodes/edges for modules, files, imports, calls where possible
 TEST: Sample repo produces dependency graph JSON
+STATUS: DONE — build_graph() emits file+module nodes and import/contains edges,
+  resolving imports to repo files. Verified in test_context.py + endpoint.
 
 SUBTASK 5.6: Add context refresh
 OUTPUT: Context updates after file changes
 TEST: Modified file invalidates and regenerates its context
+STATUS: DONE — ContextEngine caches by content hash; changed content invalidates
+  and re-extracts. Verified in test_context.py (cache hit vs. refresh on change).
 
 ---
 

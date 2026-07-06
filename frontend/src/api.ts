@@ -73,6 +73,32 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- Context engine (TASK 5) ----
+export interface ContextResult {
+  module: string | null;
+  format: string;
+  file_count: number;
+  chunk_count: number;
+  content?: string;
+  data?: unknown;
+}
+
+/** Build context for the loaded repo (throws if none is loaded / on failure). */
+export async function buildContext(
+  module: string | null = null,
+  format: "markdown" | "json" | "toon" | "graph" = "markdown"
+): Promise<ContextResult> {
+  const resp = await fetch("/api/context/build", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ module, format }),
+  });
+  if (!resp.ok) {
+    throw new Error(`Context build failed (${resp.status})`);
+  }
+  return (await resp.json()) as ContextResult;
+}
+
 /**
  * Stream a chat reply from the backend as an async generator of text deltas.
  * Parses the OpenAI-style SSE protocol (`data: {"delta": "..."}` … `[DONE]`).

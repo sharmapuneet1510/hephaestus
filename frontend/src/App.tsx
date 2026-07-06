@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchHealth, streamChat } from "./api";
+import { buildContext, fetchHealth, streamChat, type RepoMetadata } from "./api";
 import type { ChatMessage, WorkspaceStatus } from "./types";
 import { Header, type ConnState } from "./components/Header";
 import { RepoTree } from "./components/RepoTree";
@@ -23,6 +23,7 @@ export function App() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState(false);
   const [status, setStatus] = useState<WorkspaceStatus>(INITIAL_STATUS);
+  const [repo, setRepo] = useState<RepoMetadata | null>(null);
 
   // Startup: confirm backend connection (carried over from TASK 1).
   useEffect(() => {
@@ -79,31 +80,57 @@ export function App() {
     [messages, streaming, status.moduleFocus]
   );
 
-  // Action-bar handlers (SUBTASK 2.5). Placeholder behavior that produces
-  // clearly visible state changes; real workflows arrive in later tasks.
-  const handleAction = useCallback((action: ActionKind) => {
-    setStatus((s) => {
-      switch (action) {
-        case "plan":
-          return { ...s, lastAction: "Plan", currentTask: "Planning change" };
-        case "apply":
-          return {
-            ...s,
-            lastAction: "Apply",
-            currentTask: "Applied edit",
-            filesTouched: Array.from(new Set([...s.filesTouched, "src/example.ts"])),
-          };
-        case "test":
-          return { ...s, lastAction: "Test", testStatus: "running" };
-        case "revert":
-          return { ...s, lastAction: "Revert", filesTouched: [], testStatus: "idle" };
-        case "save":
-          return { ...s, lastAction: "Save Context", savedContexts: s.savedContexts + 1 };
-        default:
-          return s;
+  // Save Context builds real context for the loaded repo (TASK 5); when no repo
+  // is loaded it just records the action.
+  const saveContext = useCallback(async () => {
+    setStatus((s) => ({ ...s, lastAction: "Save Context" }));
+    if (!repo) {
+      setStatus((s) => ({ ...s, savedContexts: s.savedContexts + 1 }));
+      return;
+    }
+    setStatus((s) => ({ ...s, currentTask: "Building context…" }));
+    try {
+      const res = await buildContext(status.moduleFocus);
+      setStatus((s) => ({
+        ...s,
+        savedContexts: s.savedContexts + 1,
+        currentTask: `Context: ${res.file_count} files, ${res.chunk_count} chunks`,
+      }));
+    } catch {
+      setStatus((s) => ({ ...s, currentTask: "Context build failed" }));
+    }
+  }, [repo, status.moduleFocus]);
+
+  // Action-bar handlers (SUBTASK 2.5). Plan/Apply/Test/Revert are placeholders
+  // (real workflows arrive in later tasks); Save Context is wired to TASK 5.
+  const handleAction = useCallback(
+    (action: ActionKind) => {
+      if (action === "save") {
+        void saveContext();
+        return;
       }
-    });
-  }, []);
+      setStatus((s) => {
+        switch (action) {
+          case "plan":
+            return { ...s, lastAction: "Plan", currentTask: "Planning change" };
+          case "apply":
+            return {
+              ...s,
+              lastAction: "Apply",
+              currentTask: "Applied edit",
+              filesTouched: Array.from(new Set([...s.filesTouched, "src/example.ts"])),
+            };
+          case "test":
+            return { ...s, lastAction: "Test", testStatus: "running" };
+          case "revert":
+            return { ...s, lastAction: "Revert", filesTouched: [], testStatus: "idle" };
+          default:
+            return s;
+        }
+      });
+    },
+    [saveContext]
+  );
 
   // Resolve the mock "Test" run shortly after it starts.
   useEffect(() => {
@@ -116,7 +143,7 @@ export function App() {
     <div className="app">
       <Header conn={conn} streaming={streaming} />
       <div className="workspace">
-        <RepoTree />
+        <RepoTree onRepoLoaded={setRepo} />
         <ChatPanel messages={messages} streaming={streaming} onSend={sendMessage} />
         <StatusPanel status={status} busy={streaming} onAction={handleAction} />
       </div>

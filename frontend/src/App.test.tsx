@@ -31,6 +31,7 @@ vi.mock("./api", () => ({
   }),
   fetchRepository: vi.fn().mockResolvedValue(null),
   loadRepository: vi.fn(),
+  buildContext: vi.fn().mockResolvedValue({ file_count: 2, chunk_count: 3 }),
 }));
 
 import { App } from "./App";
