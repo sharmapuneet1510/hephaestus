@@ -5,7 +5,7 @@
 .env
 .env.local
 
-# Dependencies / build (for when the app is scaffolded)
+# Dependencies / build
 node_modules/
 dist/
 build/
@@ -14,3 +14,18 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
+# Tooling caches / test artifacts
+*.tsbuildinfo
+.pytest_cache/
+.coverage
+htmlcov/
+.vite/
+*.egg-info/
+
+# tsc-emitted outputs from vite.config.ts (build side effect)
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Hephaestus runtime cache (context summaries, etc.)
+.hephaestus/

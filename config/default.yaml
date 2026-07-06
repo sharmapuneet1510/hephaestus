@@ -1,0 +1,78 @@
+# Hephaestus default configuration.
+#
+# Most non-UI behavior is driven from this file (requirement.txt 6.10). Values of
+# the form ${ENV_VAR} are substituted from the environment at load time. Secrets
+# (API keys) are never stored here — only the *name* of the env var that holds them.
+
+server:
+  host: 127.0.0.1
+  port: 8000
+  # Origins allowed to call the backend (the Vite dev server).
+  cors_origins:
+    - http://localhost:5173
+    - http://127.0.0.1:5173
+
+ai:
+  # Internal office AI API base URL. Required (via env) before AI calls are made.
+  endpoint: ${HEPHAESTUS_AI_ENDPOINT}
+  # Name of the env var that holds the API key. The key itself is read from the
+  # environment, never written to config or logs.
+  api_key_env: HEPHAESTUS_AI_API_KEY
+  timeout_seconds: 60
+
+# Model routing tiers (requirement.txt 6.11). The classifier maps a request to a
+# tier; the tier maps to a concrete model here.
+model_routing:
+  default_tier: medium
+  tiers:
+    simple: claude-haiku-4-5
+    medium: claude-sonnet-5
+    strong: claude-opus-4-8
+
+# Context engine budgets (requirement.txt 6.12).
+context:
+  max_tokens: 128000
+  chunk_size_lines: 400
+  cache_dir: .hephaestus/cache
+
+# Paths excluded when scanning a loaded repository (requirement.txt 6.2).
+ignore_paths:
+  - .git
+  - node_modules
+  - dist
+  - build
+  - target
+  - .venv
+  - venv
+  - __pycache__
+  - .hephaestus
+
+# Test command detection (requirement.txt 6.8).
+test_commands:
+  python: pytest
+  node: npm test
+  java_maven: mvn test
+  java_gradle: gradle test
+
+# Execution safety rules (requirement.txt 6.13).
+safety:
+  workspace_only: true
+  block_destructive: true
+  blocked_command_patterns:
+    - "rm -rf"
+    - "mkfs"
+    - "dd if="
+    - ":(){ :|:& };:"
+  confirm_command_patterns:
+    - "pip install"
+    - "npm install"
+    - "git push"
+
+# Agent task execution (requirement.txt 6.6).
+tasks:
+  task_file: tasklist.txt
+
+# CLAUDE.md knowledge maintenance for loaded repos (requirement.txt 6.9).
+claude_md:
+  path: CLAUDE.md
+  update_after_task: true

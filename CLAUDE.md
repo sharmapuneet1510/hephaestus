@@ -4,9 +4,52 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-This is a **greenfield, spec-driven project**. No application code exists yet — only planning
-documents and a `.claude/` toolkit. The first real work is bootstrapping the project skeleton
-(tasklist.txt TASK 1). Do not assume build/test tooling exists; establish it as tasks require it.
+Early, spec-driven development. **TASK 1 (Project Bootstrap) is complete**: a Python/FastAPI backend
+and a React+TS+Vite+Monaco frontend skeleton exist, with config loading, env handling, and health
+checks. TASK 2 onward (from `tasklist.txt`) is not yet built. Backend stack was chosen as
+**Python/FastAPI** (matches the existing `.claude/` Python hooks); frontend is React + TypeScript +
+Vite + Monaco.
+
+## Layout
+
+- `backend/` — FastAPI app. `app/config.py` loads `config/default.yaml`; `app/main.py` is the app
+  factory + `/api/health`. Tests in `backend/tests/`.
+- `frontend/` — Vite React app. `src/App.tsx` is the startup screen that polls `/api/health`;
+  `src/api.ts` is the backend client. Dev server proxies `/api` → backend (see `vite.config.ts`).
+- `config/default.yaml` — single source of non-UI behavior (AI endpoint, model routing, context
+  limits, ignore paths, test commands, safety rules). `${ENV_VAR}` placeholders resolve from the
+  environment; the AI API key is read by the env-var name in `ai.api_key_env`, never stored in YAML.
+
+## Commands
+
+Backend (from `backend/`, using `uv`):
+
+```bash
+uv venv --python 3.11 .venv                 # first-time setup
+uv pip install -e ".[dev]" --python .venv   # install deps
+.venv/bin/python -m pytest                  # run tests
+.venv/bin/python -m pytest --cov=app        # tests + coverage
+.venv/bin/python -m pytest tests/test_config.py::test_require_ai_raises_clear_error_when_unset  # single test
+.venv/bin/python -m uvicorn app.main:app --reload   # run dev server (:8000)
+```
+
+Frontend (from `frontend/`):
+
+```bash
+npm install
+npm run dev         # Vite dev server (:5173), proxies /api -> backend
+npm run typecheck   # tsc --noEmit
+npm run build       # tsc -b && vite build
+```
+
+Notes:
+- The backend boots and serves `/api/health` **without** a real AI key; health reports
+  `ai_configured: false`. AI env vars are only required when an actual AI call is made
+  (`AppConfig.require_ai`).
+- Port `8000` may be occupied by another local service; override the backend port with
+  `--port <N>` and point the frontend proxy at it via `VITE_BACKEND_URL=http://127.0.0.1:<N>`.
+- Vite binds `localhost` (IPv6) by default — use `curl http://localhost:5173` (not `127.0.0.1`) or
+  pass `--host 127.0.0.1` when scripting checks.
 
 ## Git / Commit Rules
 
@@ -95,9 +138,4 @@ This repo ships a custom Claude Code toolkit — reuse it rather than reinventin
   (`pytest tools/ --cov=tools`), `promptshield-check.sh` (blocks dangerous prompt patterns). If you
   adopt them, add a `.claude/settings.json` and confirm the paths match the actual layout chosen.
 
-## Commands
-
-No build/lint/test commands are established yet — the project skeleton does not exist. Define them as
-part of TASK 1 (Project Bootstrap) and record the real commands here once they work. The sample hooks
-above imply an intended Python path (`black`, `isort`, `pytest --cov`), but the tech stack is not yet
-committed; do not treat those as authoritative until code exists.
+<!-- Build/test commands are documented under "## Commands" near the top of this file. -->

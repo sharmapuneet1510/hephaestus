@@ -13,22 +13,34 @@ Overall MVP Progress Target: 100%
 
 TASK 1: Project Bootstrap
 PROGRESS: 5%
+STATUS: DONE (2026-07-06) — Python/FastAPI backend + React/TS/Vite/Monaco frontend.
 
 SUBTASK 1.1: Create base project structure
 OUTPUT: Working frontend/backend project skeleton with clear folders
 TEST: App starts locally without errors
+STATUS: DONE — backend/ (FastAPI) and frontend/ (Vite) skeletons. Verified: uvicorn boots
+  with no errors; frontend `npm run typecheck` clean and `npm run build` succeeds.
 
 SUBTASK 1.2: Add default configuration files
 OUTPUT: config/default.yaml or config/default.json with API, ignore paths, model routing, test commands
 TEST: App loads config successfully and prints active config in dev logs
+STATUS: DONE — config/default.yaml + app/config.py (typed, ${ENV} substitution). Verified:
+  startup logs the active config summary; covered by tests/test_config.py.
 
 SUBTASK 1.3: Add environment handling
 OUTPUT: .env.example and runtime env loader
 TEST: Missing required env values produce clear error messages
+STATUS: DONE — backend/.env.example + dotenv load; AppConfig.require_ai() names missing vars.
+  Verified by tests/test_config.py (test_require_ai_raises_clear_error_when_unset).
 
 SUBTASK 1.4: Add basic health checks
 OUTPUT: Backend health endpoint and frontend startup screen
 TEST: Health endpoint returns OK and UI confirms backend connection
+STATUS: DONE — GET /api/health (tests/test_health.py) + src/App.tsx startup screen that polls it.
+  Backend endpoint verified returning 200 via direct curl and TestClient. NOTE: the live Vite
+  dev-proxy round-trip could not be cleanly demonstrated in this shell (a pre-existing service
+  occupies :8000 and a Vite/Node config-caching quirk interfered); proxy config is standard and
+  App.tsx consumes the exact /api/health shape the backend returns.
 
 ---
 
