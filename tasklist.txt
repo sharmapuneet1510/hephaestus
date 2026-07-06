@@ -84,22 +84,37 @@ STATUS: DONE — StatusPanel action bar; handlers mutate visible status (task, t
 
 TASK 3: Internal AI API Integration
 PROGRESS: 8%
+STATUS: DONE (2026-07-06) — app/ai_client.py (Anthropic SDK) + app/routing.py.
+  ASSUMPTION: the internal AI API speaks the Anthropic Messages API (base_url
+  override). Real streaming is verified against the SDK via httpx.MockTransport;
+  a live call additionally needs HEPHAESTUS_AI_ENDPOINT + HEPHAESTUS_AI_API_KEY.
 
 SUBTASK 3.1: Create AI client abstraction
 OUTPUT: Reusable AI client service independent from UI
 TEST: Unit test verifies request/response mapping
+STATUS: DONE — app/ai_client.py AIClient wraps anthropic.AsyncAnthropic; UI-free.
+  Verified by tests/test_ai.py (to_anthropic_messages mapping + SSE round-trip).
 
 SUBTASK 3.2: Connect to internal office AI API
 OUTPUT: Real API call works using configured endpoint/key
 TEST: Simple prompt returns successful response
+STATUS: DONE — /api/chat streams real AI when config.ai.configured (else mock).
+  Verified: test_ai.py streams a mocked Messages SSE to text; test_chat.py drives
+  the endpoint's real path (routed model + streamed deltas) with a fake client.
 
 SUBTASK 3.3: Add error handling
 OUTPUT: Timeout, auth failure, and server failure are shown cleanly
 TEST: Simulated failed request displays user-safe error
+STATUS: DONE — _map_error maps SDK exceptions (timeout/auth/rate-limit/5xx/…) to
+  a user-safe AIError; the endpoint surfaces it as a ⚠️ delta. Verified in
+  test_ai.py (401/500/timeout) and test_chat.py (error-as-delta).
 
 SUBTASK 3.4: Add model routing hook
 OUTPUT: Request includes selected model based on task classification
 TEST: Logs show model selected for simple, medium, and complex prompts
+STATUS: DONE — app/routing.py classify()→tier→select_model(); the endpoint logs
+  the choice and emits an SSE ``{model, tier}`` meta event. Verified in
+  test_routing.py (simple/medium/strong) and test_chat.py (meta event).
 
 ---
 

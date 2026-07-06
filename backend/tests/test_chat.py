@@ -23,8 +23,70 @@ def _collect_deltas(sse_text: str) -> str:
         data = line[len("data: ") :]
         if data == "[DONE]":
             continue
-        parts.append(json.loads(data)["delta"])
+        payload = json.loads(data)
+        if "delta" in payload:
+            parts.append(payload["delta"])
     return "".join(parts)
+
+
+def _ai_client(environ: dict) -> TestClient:
+    return TestClient(create_app(config=load_config(environ=environ)))
+
+
+_AI_ENV = {
+    "HEPHAESTUS_AI_ENDPOINT": "https://ai.internal.test",
+    "HEPHAESTUS_AI_API_KEY": "k",
+}
+
+
+class _FakeAIClient:
+    """Stand-in for AIClient that streams two deltas (SUBTASK 3.2)."""
+
+    def __init__(self, config, http_client=None):
+        pass
+
+    async def stream(self, messages, *, model, system=None, max_tokens=None):
+        yield "Hello "
+        yield "world"
+
+    async def aclose(self):
+        pass
+
+
+class _FailingAIClient(_FakeAIClient):
+    async def stream(self, messages, *, model, system=None, max_tokens=None):
+        from app.ai_client import AIError
+
+        raise AIError("simulated failure")
+        yield  # pragma: no cover - unreachable
+
+
+def test_chat_uses_real_ai_when_configured(monkeypatch):
+    import app.ai_client as ai
+
+    monkeypatch.setattr(ai, "AIClient", _FakeAIClient)
+    resp = _ai_client(_AI_ENV).post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "refactor the module"}]}
+    )
+    assert resp.status_code == 200
+    # SUBTASK 3.4: a routing meta event names the selected model + tier.
+    assert '"model"' in resp.text and '"tier": "strong"' in resp.text
+    # SUBTASK 3.2: the real reply streams through.
+    assert _collect_deltas(resp.text) == "Hello world"
+    assert resp.text.strip().endswith("data: [DONE]")
+
+
+def test_chat_reports_ai_error_as_safe_delta(monkeypatch):
+    import app.ai_client as ai
+
+    monkeypatch.setattr(ai, "AIClient", _FailingAIClient)
+    resp = _ai_client(_AI_ENV).post(
+        "/api/chat", json={"messages": [{"role": "user", "content": "hi"}]}
+    )
+    # SUBTASK 3.3: the failure surfaces as a user-safe message, not a crash.
+    assert resp.status_code == 200
+    assert "simulated failure" in _collect_deltas(resp.text)
+    assert resp.text.strip().endswith("data: [DONE]")
 
 
 def test_chat_streams_event_stream_content_type():

@@ -47,6 +47,8 @@ class AIConfig(BaseModel):
     endpoint: Optional[str] = None
     api_key_env: str = "HEPHAESTUS_AI_API_KEY"
     timeout_seconds: int = 60
+    # Max output tokens per assistant reply (distinct from context.max_tokens).
+    max_output_tokens: int = 4096
     # Resolved from ``os.environ[api_key_env]`` at load time; never from YAML.
     api_key: Optional[str] = None
 

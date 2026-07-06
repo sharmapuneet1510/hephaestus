@@ -19,6 +19,8 @@ ai:
   # environment, never written to config or logs.
   api_key_env: HEPHAESTUS_AI_API_KEY
   timeout_seconds: 60
+  # Max output tokens per assistant reply.
+  max_output_tokens: 4096
 
 # Model routing tiers (requirement.txt 6.11). The classifier maps a request to a
 # tier; the tier maps to a concrete model here.

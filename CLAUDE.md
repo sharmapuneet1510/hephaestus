@@ -4,17 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1 (Bootstrap)** and **TASK 2 (Chat UI MVP)** are complete:
-config/env/health, a three-panel "Forge" chat UI, and a **mock** SSE streaming chat endpoint. TASK 3
-(real internal AI API — currently mocked) onward is not yet built. Backend stack is **Python/FastAPI**
-(matches the existing `.claude/` Python hooks); frontend is React + TypeScript + Vite + Monaco.
+Early, spec-driven development. **TASK 1 (Bootstrap)**, **TASK 2 (Chat UI MVP)**, and **TASK 3
+(Internal AI API Integration)** are complete: config/env/health, a three-panel "Forge" chat UI, SSE
+streaming chat that calls the internal AI API when configured (else a mock), and model routing. TASK
+4 (Repository Loader) onward is not yet built. Backend stack is **Python/FastAPI** (matches the
+existing `.claude/` Python hooks); frontend is React + TypeScript + Vite + Monaco.
+
+**AI client:** built on the official **`anthropic` SDK** (`AsyncAnthropic`) pointed at the internal
+endpoint via `base_url`. Assumption: the internal AI API speaks the **Anthropic Messages API** shape
+(common for internal gateways). If it's OpenAI-shaped instead, only `app/ai_client.py` changes. Model
+IDs in `config/default.yaml` (`claude-haiku-4-5` / `claude-sonnet-5` / `claude-opus-4-8`) are current;
+when touching AI code, load the `claude-api` skill for authoritative SDK/model details.
 
 ## Layout
 
 - `backend/` — FastAPI app. `app/config.py` loads `config/default.yaml`; `app/main.py` is the app
   factory (`/api/health` + serves the built SPA when `frontend/dist` exists); `app/chat.py` is the
-  **mock** SSE chat endpoint (`POST /api/chat`, OpenAI-style `data: {"delta":…}` … `[DONE]`).
-  Tests in `backend/tests/`.
+  SSE chat endpoint (`POST /api/chat`, `data: {"delta":…}` … `[DONE]`) that streams real AI when
+  configured, else a mock; `app/ai_client.py` wraps the Anthropic SDK (`AIClient`, `AIError`);
+  `app/routing.py` classifies a request to a model tier. Tests in `backend/tests/`.
 - `frontend/` — Vite React app. `src/App.tsx` orchestrates health + chat state; `src/api.ts` has
   `fetchHealth` and `streamChat` (parses SSE via a `fetch` ReadableStream). Components in
   `src/components/`; design system in `src/theme.css` (the "Forge" palette) + `src/app.css`.
