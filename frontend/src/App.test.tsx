@@ -29,6 +29,8 @@ vi.mock("./api", () => ({
     ];
     for (const c of chunks) yield c;
   }),
+  fetchRepository: vi.fn().mockResolvedValue(null),
+  loadRepository: vi.fn(),
 }));
 
 import { App } from "./App";

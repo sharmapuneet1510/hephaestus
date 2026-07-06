@@ -120,26 +120,40 @@ STATUS: DONE — app/routing.py classify()→tier→select_model(); the endpoint
 
 TASK 4: Repository Loader
 PROGRESS: 10%
+STATUS: DONE (2026-07-06) — app/repo.py (scan + ignore + project type + session
+  store) and a RepoTree load form + tree view. Verified by backend test_repo.py,
+  frontend RepoTree.test.tsx, and live in a browser (loaded the Hephaestus repo).
 
 SUBTASK 4.1: Add repository folder selection
 OUTPUT: User can select/load local repository
 TEST: Selected path appears in UI
+STATUS: DONE — POST /api/repo/load {path}; RepoTree path input + Load button.
+  Verified in RepoTree.test.tsx and live (path shown, repo name + chip render).
 
 SUBTASK 4.2: Scan file tree
 OUTPUT: Repository tree with files/folders
 TEST: Known sample repo tree is displayed correctly
+STATUS: DONE — build_tree() returns a nested, sorted TreeNode; RepoTree renders
+  an expandable tree. Verified in test_repo.py + RepoTree.test.tsx + live.
 
 SUBTASK 4.3: Apply ignore rules
 OUTPUT: .git, node_modules, target, build, dist, and custom ignored paths excluded
 TEST: Ignored folders do not appear in tree
+STATUS: DONE — config.ignore_paths + basic .gitignore patterns. Verified in
+  test_repo.py (node_modules/.git/build/*.log excluded) and live.
 
 SUBTASK 4.4: Detect project type
 OUTPUT: Basic detection for Java, Node, Python, mixed repo
 TEST: Sample repos produce expected project type
+STATUS: DONE — detect_project_type() checks marker files at root + one level
+  deep (monorepo -> mixed). Verified in test_repo.py; Hephaestus repo -> mixed.
 
 SUBTASK 4.5: Store repository metadata
 OUTPUT: Metadata saved locally for current session
 TEST: Reloading app restores last loaded repo metadata
+STATUS: DONE — SessionStore persists metadata to .hephaestus/session.json;
+  GET /api/repo restores it, and RepoTree reloads it on mount. Verified in
+  test_repo.py (roundtrip + endpoint) and RepoTree.test.tsx (restore on mount).
 
 ---
 

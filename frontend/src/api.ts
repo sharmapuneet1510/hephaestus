@@ -27,6 +27,52 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
   return (await resp.json()) as HealthResponse;
 }
 
+// ---- Repository (TASK 4) ----
+export interface TreeNode {
+  name: string;
+  path: string;
+  type: "dir" | "file";
+  size?: number;
+  children?: TreeNode[];
+}
+
+export interface RepoMetadata {
+  path: string;
+  name: string;
+  project_type: string;
+  file_count: number;
+  truncated: boolean;
+  loaded_at: string;
+}
+
+/** Load a local repository by path. Throws with the backend's message on failure. */
+export async function loadRepository(
+  path: string
+): Promise<{ metadata: RepoMetadata; tree: TreeNode }> {
+  const resp = await fetch("/api/repo/load", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path }),
+  });
+  if (!resp.ok) {
+    let detail = `Failed to load repository (${resp.status})`;
+    try {
+      detail = ((await resp.json()) as { detail?: string }).detail ?? detail;
+    } catch {
+      /* keep default */
+    }
+    throw new Error(detail);
+  }
+  return (await resp.json()) as { metadata: RepoMetadata; tree: TreeNode };
+}
+
+/** Fetch the last-loaded repo metadata (null if none). */
+export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadata | null> {
+  const resp = await fetch("/api/repo", { signal });
+  if (!resp.ok) return null;
+  return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
+}
+
 /**
  * Stream a chat reply from the backend as an async generator of text deltas.
  * Parses the OpenAI-style SSE protocol (`data: {"delta": "..."}` … `[DONE]`).

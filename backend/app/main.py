@@ -18,6 +18,8 @@ from fastapi.staticfiles import StaticFiles
 from app import __version__
 from app.chat import router as chat_router
 from app.config import AppConfig, ConfigError, load_config
+from app.repo import default_session_store
+from app.repo import router as repo_router
 
 # Built frontend (produced by `npm run build`). When present, the backend serves
 # it single-origin so no dev proxy is needed — the production deployment shape.
@@ -47,6 +49,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
 
     app = FastAPI(title="Hephaestus", version=__version__)
     app.state.config = config
+    app.state.session_store = default_session_store()
 
     app.add_middleware(
         CORSMiddleware,
@@ -68,6 +71,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
         }
 
     app.include_router(chat_router)
+    app.include_router(repo_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.

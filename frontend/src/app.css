@@ -553,15 +553,108 @@
   color: var(--scald);
 }
 
+/* ---- Repo loader ---- */
+.repo-load {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.repo-load__input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--parchment);
+  background: var(--iron-raised);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 6px 8px;
+  outline: none;
+}
+.repo-load__input:focus {
+  border-color: var(--ember);
+}
+.repo-load__input::placeholder {
+  color: var(--ash-dim);
+}
+.repo-load__btn {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ember-core);
+  background: linear-gradient(180deg, rgba(255, 106, 26, 0.16), transparent);
+  border: 1px solid rgba(255, 106, 26, 0.5);
+  border-radius: 7px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: filter 0.15s, opacity 0.15s;
+}
+.repo-load__btn:hover:not(:disabled) {
+  filter: brightness(1.15);
+}
+.repo-load__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.empty--error {
+  border-color: color-mix(in srgb, var(--scald) 40%, var(--line));
+  color: var(--scald);
+}
+
+.repo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 4px 10px;
+  border-bottom: 1px solid var(--line-soft);
+  margin-bottom: 8px;
+}
+.repo-meta__name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--parchment);
+}
+.repo-meta__sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--ash-dim);
+}
+
 /* ---- Repo tree ---- */
+.tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
 .tree-item {
   font-family: var(--font-mono);
   font-size: 12.5px;
   color: var(--ash);
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   cursor: default;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tree-item--dir {
+  color: var(--parchment);
+  cursor: pointer;
+}
+.tree-item--dir:hover {
+  background: var(--iron-hover);
+}
+.tree-item__icon {
+  color: var(--ember);
+  font-size: 10px;
+  flex-shrink: 0;
 }
