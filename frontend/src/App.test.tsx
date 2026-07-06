@@ -35,10 +35,30 @@ vi.mock("./api", () => ({
 }));
 
 import { App } from "./App";
+import { fetchRepository, loadRepository, streamChat } from "./api";
+import type { RepoMetadata, TreeNode } from "./api";
 
 beforeEach(() => {
   vi.clearAllMocks();
 });
+
+const REPO_META: RepoMetadata = {
+  path: "/proj",
+  name: "proj",
+  project_type: "mixed",
+  file_count: 1,
+  truncated: false,
+  loaded_at: "x",
+};
+const REPO_TREE: TreeNode = {
+  name: "proj",
+  path: "",
+  type: "dir",
+  children: [
+    { name: "backend", path: "backend", type: "dir", children: [] },
+    { name: "frontend", path: "frontend", type: "dir", children: [] },
+  ],
+};
 
 describe("Chat UI MVP", () => {
   it("renders the three panels without a repository (2.1)", async () => {
@@ -90,5 +110,27 @@ describe("Chat UI MVP", () => {
     await user.click(within(statusPanel).getByRole("button", { name: /save context/i }));
     expect(screen.getByTestId("last-action")).toHaveTextContent("Save Context");
     expect(screen.getByTestId("last-action")).toHaveTextContent(/1 context/i);
+  });
+
+  it("sets and clears module focus via chat commands (6.2 / 6.4)", async () => {
+    vi.mocked(fetchRepository).mockResolvedValue(REPO_META);
+    vi.mocked(loadRepository).mockResolvedValue({ metadata: REPO_META, tree: REPO_TREE });
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByTestId("repo-meta"); // repo restored/loaded
+
+    const box = screen.getByLabelText("Message");
+    await user.type(box, "focus on backend");
+    await user.click(screen.getByLabelText("Send message"));
+
+    // Focus chip appears; the assistant confirms locally (no AI call).
+    expect(await screen.findByTestId("focus-chip")).toHaveTextContent("backend");
+    expect(screen.getByText(/focused on module/i)).toBeInTheDocument();
+    expect(streamChat).not.toHaveBeenCalled();
+
+    // Clearing focus removes the chip.
+    await user.type(box, "clear focus");
+    await user.click(screen.getByLabelText("Send message"));
+    await waitFor(() => expect(screen.queryByTestId("focus-chip")).not.toBeInTheDocument());
   });
 });

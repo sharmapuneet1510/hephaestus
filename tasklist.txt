@@ -204,22 +204,36 @@ STATUS: DONE — ContextEngine caches by content hash; changed content invalidat
 
 TASK 6: Module Focus Mode
 PROGRESS: 7%
+STATUS: DONE (2026-07-06) — focus from tree + chat command, status-panel chip,
+  clear, and context ordering by focus. Verified by test_context.py (ordering),
+  RepoTree.test.tsx (tree focus), App.test.tsx (chat command + clear), and live.
 
 SUBTASK 6.1: Set focus from file tree
 OUTPUT: User can mark folder/module as active focus
 TEST: Focus badge appears in UI
+STATUS: DONE — each dir row has a focus button; App sets status.moduleFocus,
+  StatusPanel shows a "◎ <module>" chip, the dir highlights. Verified in
+  RepoTree.test.tsx + live.
 
 SUBTASK 6.2: Set focus from chat command
 OUTPUT: User can type focus on checkout module or similar
 TEST: Assistant sets matching module as focus
+STATUS: DONE — "focus on <name>" is parsed locally (no AI call), resolved to a
+  dir path from the tree; assistant confirms. Verified in App.test.tsx + live
+  ("focus on backend" -> Focused on module `backend`).
 
 SUBTASK 6.3: Prioritize focus in prompts
 OUTPUT: Context builder ranks focused module higher
 TEST: Prompt preview contains focused module context first
+STATUS: DONE — order_by_focus() ranks focused-module files first; render_markdown/
+  render_toon and POST /api/context/build accept a `focus` param. Verified in
+  test_context.py (focused module first in TOON/order).
 
 SUBTASK 6.4: Clear focus
 OUTPUT: User can clear active focus
 TEST: Focus badge disappears and context ranking resets
+STATUS: DONE — chip "×" and "clear focus"/"unfocus" chat command reset
+  moduleFocus (ordering reverts with no focus). Verified in App.test.tsx + live.
 
 ---
 

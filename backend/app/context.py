@@ -191,9 +191,25 @@ def extract_metadata(rel_path: str, content: str) -> FileMetadata:
 
 
 # --------------------------------------------------------------------------- #
+# Focus ordering (SUBTASK 6.3) — rank a focused module's files first.
+# --------------------------------------------------------------------------- #
+def order_by_focus(files: list[FileMetadata], focus: Optional[str]) -> list[FileMetadata]:
+    if not focus:
+        return list(files)
+    focus = focus.rstrip("/")
+    in_focus: list[FileMetadata] = []
+    rest: list[FileMetadata] = []
+    for meta in files:
+        target = in_focus if (meta.path == focus or meta.path.startswith(f"{focus}/")) else rest
+        target.append(meta)
+    return in_focus + rest
+
+
+# --------------------------------------------------------------------------- #
 # 5.2 — Markdown summaries
 # --------------------------------------------------------------------------- #
-def render_markdown(ctx: RepoContext) -> str:
+def render_markdown(ctx: RepoContext, focus: Optional[str] = None) -> str:
+    ctx = ctx.model_copy(update={"files": order_by_focus(ctx.files, focus)}) if focus else ctx
     lines = [f"# Context for {Path(ctx.root).name}"]
     if ctx.module:
         lines.append(f"_Module focus: `{ctx.module}`_")
@@ -224,10 +240,13 @@ def render_markdown(ctx: RepoContext) -> str:
 # --------------------------------------------------------------------------- #
 # 5.4 — TOON-style compact context
 # --------------------------------------------------------------------------- #
-def render_toon(ctx: RepoContext) -> str:
-    """One compact line per file — token-lean context for prompts."""
+def render_toon(ctx: RepoContext, focus: Optional[str] = None) -> str:
+    """One compact line per file — token-lean context for prompts.
+
+    When ``focus`` is set, files under that module are listed first (SUBTASK 6.3).
+    """
     out: list[str] = []
-    for meta in ctx.files:
+    for meta in order_by_focus(ctx.files, focus):
         parts = [meta.path, meta.language, f"L{meta.lines}"]
         if meta.symbols:
             parts.append("sym:" + ",".join(s.name for s in meta.symbols[:12]))
@@ -360,7 +379,8 @@ def default_context_engine() -> ContextEngine:
 # Endpoint
 # --------------------------------------------------------------------------- #
 class BuildContextRequest(BaseModel):
-    module: Optional[str] = None
+    module: Optional[str] = None  # restrict the scan to this subpath
+    focus: Optional[str] = None  # rank this module's files first (SUBTASK 6.3)
     format: str = "markdown"  # markdown | json | toon | graph
 
 
@@ -380,16 +400,18 @@ def build_context(request: BuildContextRequest, http_request: Request) -> dict:
 
     result: dict = {
         "module": request.module,
+        "focus": request.focus,
         "format": request.format,
         "file_count": len(ctx.files),
         "chunk_count": chunk_count,
     }
     if request.format == "markdown":
-        result["content"] = render_markdown(ctx)
+        result["content"] = render_markdown(ctx, focus=request.focus)
     elif request.format == "toon":
-        result["content"] = render_toon(ctx)
+        result["content"] = render_toon(ctx, focus=request.focus)
     elif request.format == "json":
-        result["data"] = ctx.model_dump()
+        ordered = order_by_focus(ctx.files, request.focus)
+        result["data"] = ctx.model_copy(update={"files": ordered}).model_dump()
     elif request.format == "graph":
         result["data"] = build_graph(ctx)
     else:

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchRepository, loadRepository, type RepoMetadata, type TreeNode } from "../api";
 
-// Left panel — repository loader + file tree (TASK 4). The user pastes a local
-// path; the backend scans it (honoring ignore rules) and returns the tree.
+// Left panel — repository loader + file tree (TASK 4) with module focus (TASK 6).
 
 type LoadState =
   | { kind: "idle" }
@@ -10,7 +9,15 @@ type LoadState =
   | { kind: "loaded"; repo: RepoMetadata; tree: TreeNode }
   | { kind: "error"; message: string };
 
-export function RepoTree({ onRepoLoaded }: { onRepoLoaded?: (repo: RepoMetadata | null) => void }) {
+export function RepoTree({
+  focus = null,
+  onRepoLoaded,
+  onSetFocus,
+}: {
+  focus?: string | null;
+  onRepoLoaded?: (repo: RepoMetadata | null, tree: TreeNode | null) => void;
+  onSetFocus?: (path: string) => void;
+}) {
   const [path, setPath] = useState("");
   const [state, setState] = useState<LoadState>({ kind: "idle" });
 
@@ -21,10 +28,10 @@ export function RepoTree({ onRepoLoaded }: { onRepoLoaded?: (repo: RepoMetadata 
     try {
       const { metadata, tree } = await loadRepository(trimmed);
       setState({ kind: "loaded", repo: metadata, tree });
-      onRepoLoaded?.(metadata);
+      onRepoLoaded?.(metadata, tree);
     } catch (err) {
       setState({ kind: "error", message: err instanceof Error ? err.message : "Load failed" });
-      onRepoLoaded?.(null);
+      onRepoLoaded?.(null, null);
     }
   };
 
@@ -97,7 +104,13 @@ export function RepoTree({ onRepoLoaded }: { onRepoLoaded?: (repo: RepoMetadata 
             </div>
             <ul className="tree" role="tree">
               {(state.tree.children ?? []).map((child) => (
-                <TreeItem key={child.path} node={child} depth={0} />
+                <TreeItem
+                  key={child.path}
+                  node={child}
+                  depth={0}
+                  focus={focus}
+                  onSetFocus={onSetFocus}
+                />
               ))}
             </ul>
           </>
@@ -107,7 +120,17 @@ export function RepoTree({ onRepoLoaded }: { onRepoLoaded?: (repo: RepoMetadata 
   );
 }
 
-function TreeItem({ node, depth }: { node: TreeNode; depth: number }) {
+function TreeItem({
+  node,
+  depth,
+  focus,
+  onSetFocus,
+}: {
+  node: TreeNode;
+  depth: number;
+  focus: string | null;
+  onSetFocus?: (path: string) => void;
+}) {
   const [open, setOpen] = useState(depth < 1);
   const isDir = node.type === "dir";
   const pad = { paddingLeft: `${depth * 12 + 8}px` };
@@ -121,16 +144,35 @@ function TreeItem({ node, depth }: { node: TreeNode; depth: number }) {
     );
   }
 
+  const isFocused = focus === node.path;
   return (
     <li role="treeitem" aria-expanded={open}>
-      <button className="tree-item tree-item--dir" style={pad} onClick={() => setOpen((o) => !o)}>
-        <span className="tree-item__icon">{open ? "▾" : "▸"}</span>
-        {node.name}
-      </button>
+      <div className={`tree-row${isFocused ? " tree-row--focused" : ""}`} style={pad}>
+        <button className="tree-item tree-item--dir" onClick={() => setOpen((o) => !o)}>
+          <span className="tree-item__icon">{open ? "▾" : "▸"}</span>
+          {node.name}
+        </button>
+        {onSetFocus && (
+          <button
+            className={`tree-focus${isFocused ? " tree-focus--on" : ""}`}
+            title={isFocused ? "Focused" : `Focus on ${node.path}`}
+            aria-label={`Focus on ${node.path}`}
+            onClick={() => onSetFocus(node.path)}
+          >
+            ◎
+          </button>
+        )}
+      </div>
       {open && (
         <ul className="tree" role="group">
           {(node.children ?? []).map((child) => (
-            <TreeItem key={child.path} node={child} depth={depth + 1} />
+            <TreeItem
+              key={child.path}
+              node={child}
+              depth={depth + 1}
+              focus={focus}
+              onSetFocus={onSetFocus}
+            />
           ))}
         </ul>
       )}

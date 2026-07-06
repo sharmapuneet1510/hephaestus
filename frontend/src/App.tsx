@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { buildContext, fetchHealth, streamChat, type RepoMetadata } from "./api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  buildContext,
+  fetchHealth,
+  streamChat,
+  type RepoMetadata,
+  type TreeNode,
+} from "./api";
 import type { ChatMessage, WorkspaceStatus } from "./types";
 import { Header, type ConnState } from "./components/Header";
 import { RepoTree } from "./components/RepoTree";
@@ -24,6 +30,28 @@ export function App() {
   const [streaming, setStreaming] = useState(false);
   const [status, setStatus] = useState<WorkspaceStatus>(INITIAL_STATUS);
   const [repo, setRepo] = useState<RepoMetadata | null>(null);
+  const [repoTree, setRepoTree] = useState<TreeNode | null>(null);
+
+  // Directory paths available for module focus (TASK 6).
+  const moduleDirs = useMemo(() => {
+    const dirs: string[] = [];
+    const walk = (node: TreeNode) => {
+      for (const child of node.children ?? []) {
+        if (child.type === "dir") {
+          dirs.push(child.path);
+          walk(child);
+        }
+      }
+    };
+    if (repoTree) walk(repoTree);
+    return dirs;
+  }, [repoTree]);
+
+  const handleRepoLoaded = useCallback((meta: RepoMetadata | null, tree: TreeNode | null) => {
+    setRepo(meta);
+    setRepoTree(tree);
+    setStatus((s) => ({ ...s, moduleFocus: null })); // reset focus for the new repo
+  }, []);
 
   // Startup: confirm backend connection (carried over from TASK 1).
   useEffect(() => {
@@ -40,6 +68,45 @@ export function App() {
   const sendMessage = useCallback(
     async (text: string) => {
       if (streaming) return;
+      const trimmed = text.trim();
+
+      // Module focus commands (SUBTASK 6.2 / 6.4) — handled locally, no AI call.
+      if (/^(?:clear focus|unfocus|remove focus)$/i.test(trimmed)) {
+        setStatus((s) => ({ ...s, moduleFocus: null }));
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId(), role: "user", content: text },
+          { id: nextId(), role: "assistant", content: "Cleared module focus." },
+        ]);
+        return;
+      }
+      const focusMatch = trimmed.match(/^focus on (?:the )?(.+?)(?: module)?$/i);
+      if (focusMatch) {
+        const target = focusMatch[1].trim().toLowerCase();
+        let note: string;
+        if (!repo) {
+          note = "Load a repository first, then set a module focus.";
+        } else {
+          const resolved =
+            moduleDirs.find((d) => d.toLowerCase() === target) ??
+            moduleDirs.find((d) => d.split("/").pop()?.toLowerCase() === target) ??
+            moduleDirs.find((d) => d.toLowerCase().endsWith(`/${target}`)) ??
+            null;
+          if (resolved) {
+            setStatus((s) => ({ ...s, moduleFocus: resolved }));
+            note = `Focused on module \`${resolved}\`.`;
+          } else {
+            note = `No module matching "${focusMatch[1].trim()}". Try a folder name from the tree.`;
+          }
+        }
+        setMessages((prev) => [
+          ...prev,
+          { id: nextId(), role: "user", content: text },
+          { id: nextId(), role: "assistant", content: note },
+        ]);
+        return;
+      }
+
       const userMsg: ChatMessage = { id: nextId(), role: "user", content: text };
       const assistantId = nextId();
 
@@ -77,7 +144,7 @@ export function App() {
         setStatus((s) => ({ ...s, currentTask: "Idle" }));
       }
     },
-    [messages, streaming, status.moduleFocus]
+    [messages, streaming, status.moduleFocus, repo, moduleDirs]
   );
 
   // Save Context builds real context for the loaded repo (TASK 5); when no repo
@@ -143,9 +210,18 @@ export function App() {
     <div className="app">
       <Header conn={conn} streaming={streaming} />
       <div className="workspace">
-        <RepoTree onRepoLoaded={setRepo} />
+        <RepoTree
+          focus={status.moduleFocus}
+          onRepoLoaded={handleRepoLoaded}
+          onSetFocus={(path) => setStatus((s) => ({ ...s, moduleFocus: path }))}
+        />
         <ChatPanel messages={messages} streaming={streaming} onSend={sendMessage} />
-        <StatusPanel status={status} busy={streaming} onAction={handleAction} />
+        <StatusPanel
+          status={status}
+          busy={streaming}
+          onAction={handleAction}
+          onClearFocus={() => setStatus((s) => ({ ...s, moduleFocus: null }))}
+        />
       </div>
     </div>
   );

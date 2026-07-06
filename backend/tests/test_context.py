@@ -13,6 +13,7 @@ from app.context import (
     build_graph,
     chunk_content,
     extract_metadata,
+    order_by_focus,
     render_markdown,
     render_toon,
 )
@@ -119,6 +120,25 @@ def test_toon_is_shorter_and_keeps_key_facts():
     markdown = render_markdown(ctx)
     assert len(toon) < len(markdown)  # SUBTASK 5.4
     assert "app/mod.py" in toon and "top_level" in toon  # key facts kept
+
+
+# --------------------------------------------------------------------------- #
+# 6.3 — Focus ordering (context builder ranks focused module first)
+# --------------------------------------------------------------------------- #
+def test_order_by_focus_ranks_module_first():
+    ctx = RepoContext(
+        root="/repo",
+        files=[
+            extract_metadata("core/util.py", "def u():\n    pass\n"),
+            extract_metadata("checkout/pay.py", "def pay():\n    pass\n"),
+            extract_metadata("checkout/cart.py", "def cart():\n    pass\n"),
+        ],
+    )
+    ordered = order_by_focus(ctx.files, "checkout")
+    assert [m.path for m in ordered][:2] == ["checkout/pay.py", "checkout/cart.py"]
+
+    toon = render_toon(ctx, focus="checkout")
+    assert toon.splitlines()[0].startswith("checkout/")  # focused module first
 
 
 # --------------------------------------------------------------------------- #

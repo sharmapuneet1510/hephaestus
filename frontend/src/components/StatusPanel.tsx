@@ -13,10 +13,12 @@ export function StatusPanel({
   status,
   busy,
   onAction,
+  onClearFocus,
 }: {
   status: WorkspaceStatus;
   busy: boolean;
   onAction: (action: ActionKind) => void;
+  onClearFocus?: () => void;
 }) {
   return (
     <aside className="panel panel--status" aria-label="Task and status">
@@ -33,7 +35,17 @@ export function StatusPanel({
         <div className="status-block">
           <div className="status-block__label">Module Focus</div>
           {status.moduleFocus ? (
-            <span className="chip chip--focus">◎ {status.moduleFocus}</span>
+            <span className="chip chip--focus" data-testid="focus-chip">
+              ◎ {status.moduleFocus}
+              <button
+                className="chip__clear"
+                type="button"
+                aria-label="Clear module focus"
+                onClick={onClearFocus}
+              >
+                ×
+              </button>
+            </span>
           ) : (
             <span className="status-value status-value--muted">none</span>
           )}

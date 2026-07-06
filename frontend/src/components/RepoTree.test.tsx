@@ -67,6 +67,17 @@ describe("RepoTree (TASK 4)", () => {
     expect(await screen.findByTestId("repo-meta")).toHaveTextContent("sample");
   });
 
+  it("sets module focus from a directory in the tree (6.1)", async () => {
+    vi.mocked(fetchRepository).mockResolvedValue(META);
+    vi.mocked(loadRepository).mockResolvedValue({ metadata: META, tree: TREE });
+    const onSetFocus = vi.fn();
+    render(<RepoTree onSetFocus={onSetFocus} />);
+
+    await screen.findByTestId("repo-meta");
+    await userEvent.setup().click(screen.getByLabelText("Focus on src"));
+    expect(onSetFocus).toHaveBeenCalledWith("src");
+  });
+
   it("shows a safe error when the path is invalid (4.1)", async () => {
     vi.mocked(fetchRepository).mockResolvedValue(null);
     vi.mocked(loadRepository).mockRejectedValue(new Error("Path does not exist: /nope"));

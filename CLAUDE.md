@@ -4,11 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1–5 are complete**: config/env/health, a three-panel "Forge"
+Early, spec-driven development. **TASK 1–6 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
-routing, a repository loader (scan + ignore rules + project-type + session persistence), and a
-context engine (chunking + markdown/JSON/TOON/graph + hash-based refresh, wired to the Save Context
-button). TASK 6 (Module Focus Mode) onward is not yet built. Backend stack is **Python/FastAPI**
+routing, a repository loader (scan + ignore rules + project-type + session persistence), a context
+engine (chunking + markdown/JSON/TOON/graph + hash-based refresh, wired to Save Context), and module
+focus (set from the tree or a "focus on X" chat command, prioritized in context, cleared via chip/
+command). TASK 7 (Plan-First Workflow) onward is not yet built. Backend stack is **Python/FastAPI**
 (matches the existing `.claude/` Python hooks); frontend is React + TypeScript + Vite + Monaco.
 
 **AI client:** built on the official **`anthropic` SDK** (`AsyncAnthropic`) pointed at the internal
