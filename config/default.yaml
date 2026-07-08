@@ -64,11 +64,24 @@ safety:
     - "rm -rf"
     - "mkfs"
     - "dd if="
-    - ":(){ :|:& };:"
+    - ":(){ :|:& };:"      # fork bomb
+    - "/etc/shadow"         # credential dump
+    - "/etc/passwd"
+    - "id_rsa"
+    - ".aws/credentials"
+    - ".ssh/id_"
+    - "shutdown"            # system-level
+    - "reboot"
+    - "chmod -R 777 /"
+    - "> /dev/sd"
+    - "curl | sh"
+    - "wget | sh"
   confirm_command_patterns:
     - "pip install"
     - "npm install"
     - "git push"
+    - "npm run build"
+    - "make"
 
 # Agent task execution (requirement.txt 6.6).
 tasks:

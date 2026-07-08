@@ -414,22 +414,36 @@ STATUS: DONE — build_prompt_preamble() returns CLAUDE.md content; the real cha
 
 TASK 12: Safety and Permissions
 PROGRESS: 5%
+STATUS: DONE (2026-07-08) — app/safety.py (workspace guard, command classifier,
+  secret redaction) + config patterns + edit/ai_client wiring. Verified by
+  test_safety.py and live (rm -rf/etc/shadow -> blocked, pip install -> confirm).
 
 SUBTASK 12.1: Add workspace boundary guard
 OUTPUT: File reads/writes restricted to loaded repo
 TEST: Outside path access is blocked
+STATUS: DONE — is_within_workspace()/resolve_in_workspace() (shared; edit.py uses
+  it). Verified in test_safety.py + test_edit.py (outside path -> 400).
 
 SUBTASK 12.2: Add command allow/block rules
 OUTPUT: Dangerous commands blocked by default
 TEST: rm -rf, credential dump, and system-level commands are blocked
+STATUS: DONE — classify_command() blocks config.safety.blocked_command_patterns
+  (rm -rf, /etc/shadow, id_rsa, shutdown, fork bomb, ...); POST /api/command/check.
+  Verified in test_safety.py + live.
 
 SUBTASK 12.3: Add command confirmation rules
 OUTPUT: Risky but valid commands require confirmation
 TEST: Install/build commands show confirmation prompt when configured
+STATUS: DONE — confirm_command_patterns (pip install, npm install, git push,
+  npm run build, make) return decision="confirm" for the UI to gate on. Verified
+  in test_safety.py + live.
 
 SUBTASK 12.4: Add secrets redaction
 OUTPUT: Prompt/log builder masks detected secrets
 TEST: Sample API keys are redacted before AI call/logging
+STATUS: DONE — redact_secrets() masks API keys/tokens/bearer/key=value; applied in
+  to_anthropic_messages() before any AI call. Verified in test_safety.py (tokens,
+  key=value, and outbound messages redacted; no false positives on plain text).
 
 ---
 

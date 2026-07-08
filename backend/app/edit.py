@@ -9,7 +9,6 @@ files (8.5).
 from __future__ import annotations
 
 import difflib
-import os
 from pathlib import Path
 from typing import Optional
 
@@ -17,6 +16,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.plan import PlanState, require_approved_plan
+from app.safety import resolve_in_workspace
 
 router = APIRouter()
 
@@ -40,18 +40,6 @@ class EditSession:
 
 def default_edit_session() -> EditSession:
     return EditSession()
-
-
-# --------------------------------------------------------------------------- #
-# Workspace safety (SUBTASK 8.1)
-# --------------------------------------------------------------------------- #
-def resolve_in_workspace(root: Path, rel_path: str) -> Path:
-    """Resolve ``rel_path`` under ``root``, rejecting anything outside it."""
-    root_res = root.resolve()
-    candidate = (root_res / rel_path).resolve()
-    if candidate != root_res and not str(candidate).startswith(f"{root_res}{os.sep}"):
-        raise HTTPException(status_code=400, detail="Path is outside the workspace.")
-    return candidate
 
 
 def _repo_root(http_request: Request) -> Path:

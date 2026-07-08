@@ -18,6 +18,7 @@ import httpx
 
 from app.chat import ChatMessage
 from app.config import AppConfig
+from app.safety import redact_secrets
 
 logger = logging.getLogger("hephaestus.ai")
 
@@ -48,7 +49,8 @@ def to_anthropic_messages(messages: Iterable[ChatMessage]) -> list[dict]:
     converted: list[dict] = []
     for message in messages:
         role = message.role if message.role in ("user", "assistant") else "user"
-        converted.append({"role": role, "content": message.content})
+        # Redact secrets before anything leaves for the AI API (SUBTASK 12.4).
+        converted.append({"role": role, "content": redact_secrets(message.content)})
     return converted
 
 

@@ -27,6 +27,7 @@ from app.plan import default_plan_state
 from app.plan import router as plan_router
 from app.repo import default_session_store
 from app.repo import router as repo_router
+from app.safety import router as safety_router
 from app.tasks import default_task_store
 from app.tasks import router as tasks_router
 from app.testrunner import default_test_state
@@ -94,6 +95,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(test_router)
     app.include_router(tasks_router)
     app.include_router(knowledge_router)
+    app.include_router(safety_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.

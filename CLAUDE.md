@@ -4,14 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
-Early, spec-driven development. **TASK 1–11 are complete**: config/env/health, a three-panel "Forge"
+Early, spec-driven development. **TASK 1–12 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
 routing, a repository loader, a context engine, module focus, the plan-first workflow, file editing
 with diff review (`app/edit.py`), a test runner (`app/testrunner.py`), agent task execution
-(`app/tasks.py`), and CLAUDE.md knowledge maintenance for loaded repos (`app/knowledge.py`: template/
-ensure, de-duplicated notes, prompt preamble folded into the chat system prompt). TASK 12 (Safety and
-Permissions) onward is not yet built. Backend stack is **Python/FastAPI** (matches the existing
-`.claude/` Python hooks); frontend is React + TS + Vite + Monaco.
+(`app/tasks.py`), CLAUDE.md knowledge maintenance for loaded repos (`app/knowledge.py`), and a safety
+layer (`app/safety.py`: workspace boundary guard, command allow/block/confirm classifier, secret
+redaction applied before AI calls). TASK 13 (Model Routing — already largely done in `app/routing.py`)
+and later tasks remain. Backend stack is **Python/FastAPI** (matches the existing `.claude/` Python
+hooks); frontend is React + TS + Vite + Monaco.
 
 Note: `app/knowledge.py` maintains a `CLAUDE.md` inside the **loaded** repository (a product feature) —
 distinct from this file, which governs building Hephaestus itself.
