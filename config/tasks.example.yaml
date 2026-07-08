@@ -1,0 +1,23 @@
+# Example agent task file (TASK 10). Structured tasks/subtasks the app can load,
+# display, execute one at a time, and track progress against.
+tasks:
+  - id: T1
+    title: Project Bootstrap
+    progress: 40
+    subtasks:
+      - id: T1.1
+        title: Create base project structure
+        output: Working frontend/backend skeleton
+      - id: T1.2
+        title: Add default configuration files
+        output: config/default.yaml with API + model routing
+  - id: T2
+    title: Chat UI MVP
+    progress: 60
+    subtasks:
+      - id: T2.1
+        title: Build three-panel layout
+        output: Repo tree, chat, task/status panels
+      - id: T2.2
+        title: Add streaming chat flow
+        output: SSE streaming assistant responses

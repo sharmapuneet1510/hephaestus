@@ -346,22 +346,34 @@ STATUS: DONE — the last failing run is stored in TestState; POST /api/plan fol
 
 TASK 10: Agent Task Execution
 PROGRESS: 8%
+STATUS: DONE (2026-07-08) — app/tasks.py (JSON/YAML schema, TaskStore, run flow,
+  progress) + config/tasks.example.yaml + TasksPanel. Verified by test_tasks.py,
+  TasksPanel.test.tsx, and live (run subtask -> done + overall 20%).
 
 SUBTASK 10.1: Define task schema
 OUTPUT: JSON/YAML schema for task, subtask, status, output, test command, progress
 TEST: Example task file validates
+STATUS: DONE — TaskFile/Task/Subtask (pydantic); parse_task_file() validates JSON
+  or YAML. Verified in test_tasks.py; config/tasks.example.yaml bundled.
 
 SUBTASK 10.2: Load task files
 OUTPUT: UI can display available tasks and subtasks
 TEST: Example tasklist appears in status panel
+STATUS: DONE — GET /api/tasks (bundled example loads on startup); TasksPanel lists
+  tasks + subtasks. Verified in test_tasks.py, TasksPanel.test.tsx, and live.
 
 SUBTASK 10.3: Execute one subtask at a time
 OUTPUT: Selected subtask runs through plan, apply, test, update knowledge flow
 TEST: Subtask completes with status and output
+STATUS: DONE — POST /api/tasks/run marks in_progress -> runs an allowlisted test if
+  present -> done/failed with output; per-subtask Run button. Verified in
+  test_tasks.py + live (subtask -> done, green).
 
 SUBTASK 10.4: Track progress
 OUTPUT: Overall progress percentage updates based on completed tasks
 TEST: Completing subtask updates task and MVP progress
+STATUS: DONE — overall_progress() weights completed subtasks by task progress; the
+  panel shows a progress bar. Verified in test_tasks.py (0->20->40) and live (20%).
 
 ---
 

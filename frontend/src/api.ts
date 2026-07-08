@@ -73,6 +73,47 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- Agent tasks (TASK 10) ----
+export interface Subtask {
+  id: string;
+  title: string;
+  output?: string | null;
+  test?: string | null;
+  status: string;
+}
+export interface Task {
+  id: string;
+  title: string;
+  progress: number;
+  status: string;
+  subtasks: Subtask[];
+}
+export interface TasksState {
+  tasks: Task[];
+  overall_progress: number;
+}
+
+/** Fetch the current task file + overall progress. */
+export async function fetchTasks(): Promise<TasksState> {
+  const resp = await fetch("/api/tasks");
+  if (!resp.ok) return { tasks: [], overall_progress: 0 };
+  return (await resp.json()) as TasksState;
+}
+
+/** Execute one subtask; returns the updated task + overall progress. */
+export async function runSubtask(
+  taskId: string,
+  subtaskId: string
+): Promise<{ task: Task; subtask: Subtask; overall_progress: number }> {
+  const resp = await fetch("/api/tasks/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ task_id: taskId, subtask_id: subtaskId }),
+  });
+  if (!resp.ok) throw new Error(`Run subtask failed (${resp.status})`);
+  return (await resp.json()) as { task: Task; subtask: Subtask; overall_progress: number };
+}
+
 // ---- Test runner (TASK 9) ----
 export interface TestResult {
   command: string;

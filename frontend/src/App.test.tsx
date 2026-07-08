@@ -38,6 +38,8 @@ vi.mock("./api", () => ({
   revertEdits: vi.fn().mockResolvedValue([]),
   editStatus: vi.fn().mockResolvedValue([]),
   runTests: vi.fn(),
+  fetchTasks: vi.fn().mockResolvedValue({ tasks: [], overall_progress: 0 }),
+  runSubtask: vi.fn(),
 }));
 
 import { App } from "./App";

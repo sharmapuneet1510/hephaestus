@@ -1,4 +1,5 @@
 import type { WorkspaceStatus } from "../types";
+import { TasksPanel } from "./TasksPanel";
 
 export type ActionKind = "plan" | "apply" | "test" | "revert" | "save";
 
@@ -83,6 +84,10 @@ export function StatusPanel({
               <span className="status-value--muted"> · {status.savedContexts} context(s) saved</span>
             )}
           </div>
+        </div>
+
+        <div className="status-block">
+          <TasksPanel />
         </div>
       </div>
 
