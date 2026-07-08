@@ -11,9 +11,11 @@ with diff review (`app/edit.py`), a test runner (`app/testrunner.py`), agent tas
 (`app/tasks.py`), CLAUDE.md knowledge maintenance for loaded repos (`app/knowledge.py`), and a safety
 layer (`app/safety.py`: workspace boundary guard, command allow/block/confirm classifier, secret
 redaction applied before AI calls), and model routing (`app/routing.py`: 4-category classifier →
-config-driven model tier, surfaced as a "Model" chip in the UI). TASK 14 (Final Documentation
-Generator) and TASK 15 (MVP validation) remain. Backend stack is **Python/FastAPI** (matches the
-existing `.claude/` Python hooks); frontend is React + TS + Vite + Monaco.
+config-driven model tier, surfaced as a "Model" chip in the UI), and an on-demand documentation
+generator (`app/docs.py`: setup/usage/architecture/agent guides via `GET /api/docs` and the
+"generate docs" chat command; the architecture doc reflects the live API routes). Only TASK 15 (MVP
+end-to-end validation) remains. Backend stack is **Python/FastAPI** (matches the existing `.claude/`
+Python hooks); frontend is React + TS + Vite + Monaco.
 
 Note: `app/knowledge.py` maintains a `CLAUDE.md` inside the **loaded** repository (a product feature) —
 distinct from this file, which governs building Hephaestus itself.

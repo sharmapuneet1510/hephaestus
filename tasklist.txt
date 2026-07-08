@@ -476,22 +476,33 @@ STATUS: DONE — /api/chat logs the routing and emits a {model, tier} SSE meta e
 
 TASK 14: Final Documentation Generator
 PROGRESS: 4%
+STATUS: DONE (2026-07-08) — app/docs.py (setup/usage/architecture/agent) +
+  GET /api/docs + "generate docs" chat command. Verified by test_docs.py,
+  App.test.tsx, and live (architecture doc lists actual endpoints).
 
 SUBTASK 14.1: Generate setup guide
 OUTPUT: Setup documentation generated on demand
 TEST: Generated guide includes install, config, and run steps
+STATUS: DONE — setup_guide() (uv/npm install, config, uvicorn/dev run). Verified
+  in test_docs.py.
 
 SUBTASK 14.2: Generate usage guide
 OUTPUT: Usage documentation generated on demand
 TEST: Generated guide explains repo load, chat, focus, plan, apply, test
+STATUS: DONE — usage_guide() covers load/chat/focus/plan/apply/test. Verified in
+  test_docs.py.
 
 SUBTASK 14.3: Generate architecture summary
 OUTPUT: Architecture documentation generated on demand
 TEST: Generated summary reflects actual implemented modules
+STATUS: DONE — architecture_summary() lists modules + the app's live API routes
+  (walks included routers). Verified in test_docs.py + live (real endpoints shown).
 
 SUBTASK 14.4: Generate agent workflow guide
 OUTPUT: Guide explains task files, subtasks, CLAUDE.md updates, and test flow
 TEST: Guide includes complete sample task execution lifecycle
+STATUS: DONE — agent_workflow_guide() (task files, subtasks, CLAUDE.md, test flow,
+  numbered sample lifecycle). Verified in test_docs.py.
 
 ---
 

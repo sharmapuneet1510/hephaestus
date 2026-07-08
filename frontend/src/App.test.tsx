@@ -46,10 +46,18 @@ vi.mock("./api", () => ({
   fetchTasks: vi.fn().mockResolvedValue({ tasks: [], overall_progress: 0 }),
   runSubtask: vi.fn(),
   addKnowledgeNote: vi.fn().mockResolvedValue({ added: true, content: "" }),
+  generateDocs: vi.fn(),
 }));
 
 import { App } from "./App";
-import { fetchRepository, generatePlan, loadRepository, runTests, streamChat } from "./api";
+import {
+  fetchRepository,
+  generateDocs,
+  generatePlan,
+  loadRepository,
+  runTests,
+  streamChat,
+} from "./api";
 import type { Plan, RepoMetadata, TreeNode } from "./api";
 
 const PLAN: Plan = {
@@ -157,6 +165,18 @@ describe("Chat UI MVP", () => {
       expect(screen.getByText(/ready to apply edits/i)).toBeInTheDocument()
     );
     expect(generatePlan).toHaveBeenCalledWith("add login", null);
+  });
+
+  it("generates docs from a chat command (TASK 14)", async () => {
+    vi.mocked(generateDocs).mockResolvedValue("# Setup Guide\n\nInstall and run steps.");
+    const user = userEvent.setup();
+    render(<App />);
+    await user.type(screen.getByLabelText("Message"), "generate docs");
+    await user.click(screen.getByLabelText("Send message"));
+
+    expect(await screen.findByText(/setup guide/i)).toBeInTheDocument();
+    expect(generateDocs).toHaveBeenCalledWith("all");
+    expect(streamChat).not.toHaveBeenCalled(); // handled locally, no AI call
   });
 
   it("runs tests and reports a failure summary (9.2 / 9.3)", async () => {

@@ -20,6 +20,7 @@ from app.chat import router as chat_router
 from app.config import AppConfig, ConfigError, load_config
 from app.context import default_context_engine
 from app.context import router as context_router
+from app.docs import router as docs_router
 from app.edit import default_edit_session
 from app.edit import router as edit_router
 from app.knowledge import router as knowledge_router
@@ -96,6 +97,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(tasks_router)
     app.include_router(knowledge_router)
     app.include_router(safety_router)
+    app.include_router(docs_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.

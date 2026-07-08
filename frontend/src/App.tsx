@@ -5,11 +5,13 @@ import {
   buildContext,
   editStatus,
   fetchHealth,
+  generateDocs,
   generatePlan,
   revertEdits,
   runTests,
   streamChat,
   tryEdit,
+  type DocsKind,
   type Plan,
   type RepoMetadata,
   type TreeNode,
@@ -126,6 +128,24 @@ export function App() {
         ]);
         return;
       }
+      // Generate docs on demand (TASK 14): "generate docs [setup|usage|architecture|agent|all]".
+      const docsMatch = trimmed.match(
+        /^(?:generate docs|\/docs)(?:\s+(setup|usage|architecture|agent|all))?$/i
+      );
+      if (docsMatch) {
+        setMessages((prev) => [...prev, { id: nextId(), role: "user", content: text }]);
+        setStatus((s) => ({ ...s, currentTask: "Generating docs…" }));
+        let content: string;
+        try {
+          content = await generateDocs((docsMatch[1]?.toLowerCase() as DocsKind) ?? "all");
+        } catch {
+          content = "⚠️ Could not generate documentation.";
+        }
+        setMessages((prev) => [...prev, { id: nextId(), role: "assistant", content }]);
+        setStatus((s) => ({ ...s, currentTask: "Idle" }));
+        return;
+      }
+
       const focusMatch = trimmed.match(/^focus on (?:the )?(.+?)(?: module)?$/i);
       if (focusMatch) {
         const target = focusMatch[1].trim().toLowerCase();

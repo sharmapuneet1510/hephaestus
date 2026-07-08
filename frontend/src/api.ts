@@ -73,6 +73,16 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- Final documentation (TASK 14) ----
+export type DocsKind = "setup" | "usage" | "architecture" | "agent" | "all";
+
+/** Generate project documentation on demand. */
+export async function generateDocs(kind: DocsKind = "all"): Promise<string> {
+  const resp = await fetch(`/api/docs?kind=${kind}`);
+  if (!resp.ok) throw new Error(`Docs generation failed (${resp.status})`);
+  return ((await resp.json()) as { content: string }).content;
+}
+
 // ---- CLAUDE.md knowledge (TASK 11) ----
 /** Record a concise note in the loaded repo's CLAUDE.md (created if missing). */
 export async function addKnowledgeNote(
