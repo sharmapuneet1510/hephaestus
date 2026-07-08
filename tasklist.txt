@@ -449,18 +449,28 @@ STATUS: DONE — redact_secrets() masks API keys/tokens/bearer/key=value; applie
 
 TASK 13: Model Routing
 PROGRESS: 4%
+STATUS: DONE (2026-07-08) — app/routing.py 4-category classifier + config-driven
+  model selection (core shipped in TASK 3); UI now shows the routed tier. Verified
+  by test_routing.py, test_chat.py, and App.test.tsx (model-tier chip).
 
 SUBTASK 13.1: Create task classifier
 OUTPUT: Classifies request as simple, medium, complex, or architecture-level
 TEST: Example prompts route to expected categories
+STATUS: DONE — classify_category() returns simple|medium|complex|architecture;
+  mapped to tiers (complex/architecture -> strong). Verified in test_routing.py.
 
 SUBTASK 13.2: Map classifier to model config
 OUTPUT: Selected model tier comes from config
 TEST: Changing config changes model selection
+STATUS: DONE — select_model() reads config.model_routing.tiers. Verified:
+  overriding the config tier changes the selected model (test_routing.py).
 
 SUBTASK 13.3: Show selected model
 OUTPUT: UI/log displays selected model tier for transparency
 TEST: Chat request shows selected model tier
+STATUS: DONE — /api/chat logs the routing and emits a {model, tier} SSE meta event;
+  streamChat surfaces it and the status panel shows a "Model" chip. Verified in
+  test_chat.py (meta event) and App.test.tsx (tier chip displayed).
 
 ---
 

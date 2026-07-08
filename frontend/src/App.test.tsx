@@ -19,7 +19,12 @@ vi.mock("./api", () => ({
       context_max_tokens: 128000,
     },
   }),
-  streamChat: vi.fn(async function* () {
+  streamChat: vi.fn(async function* (
+    _messages: unknown,
+    _module: unknown,
+    onMeta?: (m: { model: string; tier: string }) => void
+  ) {
+    onMeta?.({ model: "claude-sonnet-5", tier: "medium" }); // routing meta (TASK 13.3)
     // Mock reply exercising markdown + a fenced code block (SUBTASK 2.4).
     const chunks = [
       "Here's my **plan**.\n\n",
@@ -108,6 +113,8 @@ describe("Chat UI MVP", () => {
       expect(screen.getByText("python")).toBeInTheDocument(); // code language label
       expect(screen.getByText("copy")).toBeInTheDocument();
     });
+    // The routed model tier is shown for transparency (TASK 13.3).
+    expect(screen.getByTestId("model-tier")).toHaveTextContent("medium");
   });
 
   it("action buttons trigger visible state changes (2.5)", async () => {

@@ -12,23 +12,31 @@ from app.config import AppConfig
 
 Tier = str  # one of: "simple" | "medium" | "strong"
 
-# Architecture / multi-file / large-context work -> strongest model.
-_STRONG_SIGNALS = (
-    "refactor",
+Category = str  # simple | medium | complex | architecture (SUBTASK 13.1)
+
+# Architecture-level work — the highest tier.
+_ARCHITECTURE_SIGNALS = (
     "architecture",
     "architect",
+    "system design",
+    "design a system",
+    "microservice",
+    "restructure",
+    "across the codebase",
+    "whole repo",
+    "entire repo",
+)
+
+# Complex multi-file changes.
+_COMPLEX_SIGNALS = (
+    "refactor",
     "migrate",
     "migration",
     "multi-file",
     "multi file",
     "redesign",
     "rewrite",
-    "system design",
     "design a",
-    "across the codebase",
-    "whole repo",
-    "entire repo",
-    "restructure",
 )
 
 # Small explain/format/lookup tasks -> fast, cheap model.
@@ -47,6 +55,14 @@ _SIMPLE_SIGNALS = (
     "how do i",
 )
 
+# Category -> model tier.
+_CATEGORY_TIER: dict[Category, Tier] = {
+    "simple": "simple",
+    "medium": "medium",
+    "complex": "strong",
+    "architecture": "strong",
+}
+
 
 def _last_user_text(request: ChatRequest) -> str:
     for message in reversed(request.messages):
@@ -55,21 +71,23 @@ def _last_user_text(request: ChatRequest) -> str:
     return ""
 
 
-def classify(request: ChatRequest) -> Tier:
-    """Classify a request as ``simple`` | ``medium`` | ``strong``.
-
-    Heuristic and deliberately explainable: a module focus or architecture
-    signal biases toward ``strong``; short lookup/explain prompts toward
-    ``simple``; everything else is ``medium``.
-    """
+def classify_category(request: ChatRequest) -> Category:
+    """Classify a request as simple | medium | complex | architecture (SUBTASK 13.1)."""
     text = _last_user_text(request).lower()
     word_count = len(text.split())
 
-    if any(signal in text for signal in _STRONG_SIGNALS):
-        return "strong"
+    if any(signal in text for signal in _ARCHITECTURE_SIGNALS):
+        return "architecture"
+    if any(signal in text for signal in _COMPLEX_SIGNALS):
+        return "complex"
     if any(signal in text for signal in _SIMPLE_SIGNALS) and word_count <= 24:
         return "simple"
     return "medium"
+
+
+def classify(request: ChatRequest) -> Tier:
+    """Classify a request to a model tier (via its category)."""
+    return _CATEGORY_TIER[classify_category(request)]
 
 
 def select_model(config: AppConfig, tier: Tier) -> str:

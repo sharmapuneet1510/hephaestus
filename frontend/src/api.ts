@@ -268,13 +268,20 @@ export async function buildContext(
   return (await resp.json()) as ContextResult;
 }
 
+export interface ChatMeta {
+  model: string;
+  tier: string;
+}
+
 /**
  * Stream a chat reply from the backend as an async generator of text deltas.
  * Parses the OpenAI-style SSE protocol (`data: {"delta": "..."}` … `[DONE]`).
+ * `onMeta` is invoked with the routed model/tier when present (TASK 13.3).
  */
 export async function* streamChat(
   messages: Pick<ChatMessage, "role" | "content">[],
   module: string | null,
+  onMeta?: (meta: ChatMeta) => void,
   signal?: AbortSignal
 ): AsyncGenerator<string> {
   const resp = await fetch("/api/chat", {
@@ -306,8 +313,9 @@ export async function* streamChat(
       const data = dataLine.slice("data: ".length);
       if (data === "[DONE]") return;
       try {
-        const parsed = JSON.parse(data) as { delta?: string };
+        const parsed = JSON.parse(data) as { delta?: string; model?: string; tier?: string };
         if (parsed.delta) yield parsed.delta;
+        else if (parsed.model && parsed.tier) onMeta?.({ model: parsed.model, tier: parsed.tier });
       } catch {
         // Ignore malformed keep-alive lines.
       }

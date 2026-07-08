@@ -54,6 +54,15 @@ export function StatusPanel({
           )}
         </div>
 
+        {status.modelTier && (
+          <div className="status-block">
+            <div className="status-block__label">Model</div>
+            <span className="chip" data-testid="model-tier">
+              {status.modelTier}
+            </span>
+          </div>
+        )}
+
         <div className="status-block">
           <div className="status-block__label">Tests</div>
           <span className={`test-badge test-badge--${status.testStatus}`}>

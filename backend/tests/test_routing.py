@@ -6,7 +6,7 @@ import pytest
 
 from app.chat import ChatRequest
 from app.config import load_config
-from app.routing import classify, route, select_model
+from app.routing import classify, classify_category, route, select_model
 
 
 def _req(text: str, module: str | None = None) -> ChatRequest:
@@ -51,3 +51,29 @@ def test_route_returns_tier_and_model():
     tier, model = route(config, _req("Refactor the whole repo architecture"))
     assert tier == "strong"
     assert model == config.model_routing.tiers["strong"]
+
+
+# --------------------------------------------------------------------------- #
+# TASK 13 — four-category classifier + config-driven selection
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize(
+    "text,category",
+    [
+        ("Design a system for the payments service", "architecture"),
+        ("Rework the microservice architecture", "architecture"),
+        ("Refactor the auth module", "complex"),
+        ("Migrate the database layer", "complex"),
+        ("What is this function?", "simple"),
+        ("Add a null check and a test", "medium"),
+    ],
+)
+def test_classify_category_four_way(text, category):
+    assert classify_category(_req(text)) == category
+
+
+def test_config_change_changes_selected_model():
+    """Changing config.model_routing changes the selected model (SUBTASK 13.2)."""
+    config = load_config(environ={})
+    config.model_routing.tiers["strong"] = "claude-fable-5"  # override config
+    _, model = route(config, _req("Refactor the architecture"))
+    assert model == "claude-fable-5"

@@ -12,7 +12,7 @@ export interface ChatMessage {
 
 export type TestStatus = "idle" | "running" | "passed" | "failed";
 
-/** Right-panel workspace state (placeholder wiring for later tasks). */
+/** Right-panel workspace state. */
 export interface WorkspaceStatus {
   currentTask: string;
   moduleFocus: string | null;
@@ -20,4 +20,6 @@ export interface WorkspaceStatus {
   testStatus: TestStatus;
   lastAction: string | null;
   savedContexts: number;
+  /** Routed model tier for the last assistant turn (TASK 13.3). */
+  modelTier: string | null;
 }

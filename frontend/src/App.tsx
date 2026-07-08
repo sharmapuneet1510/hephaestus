@@ -27,6 +27,7 @@ const INITIAL_STATUS: WorkspaceStatus = {
   testStatus: "idle",
   lastAction: null,
   savedContexts: 0,
+  modelTier: null,
 };
 
 let idCounter = 0;
@@ -167,7 +168,9 @@ export function App() {
       setStatus((s) => ({ ...s, currentTask: "Thinking…" }));
 
       try {
-        for await (const delta of streamChat(history, status.moduleFocus)) {
+        const onMeta = (meta: { model: string; tier: string }) =>
+          setStatus((s) => ({ ...s, modelTier: `${meta.tier} (${meta.model})` }));
+        for await (const delta of streamChat(history, status.moduleFocus, onMeta)) {
           setMessages((prev) =>
             prev.map((m) => (m.id === assistantId ? { ...m, content: m.content + delta } : m))
           );
