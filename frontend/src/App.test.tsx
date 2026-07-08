@@ -40,6 +40,7 @@ vi.mock("./api", () => ({
   runTests: vi.fn(),
   fetchTasks: vi.fn().mockResolvedValue({ tasks: [], overall_progress: 0 }),
   runSubtask: vi.fn(),
+  addKnowledgeNote: vi.fn().mockResolvedValue({ added: true, content: "" }),
 }));
 
 import { App } from "./App";

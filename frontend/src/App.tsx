@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  addKnowledgeNote,
   approvePlan,
   buildContext,
   editStatus,
@@ -246,12 +247,21 @@ export function App() {
       const res = await tryEdit();
       addNote(res.message);
       syncEdits();
+      // Record the completed work in the repo's CLAUDE.md (TASK 11.2).
+      if (repo) {
+        try {
+          await addKnowledgeNote(`Applied plan: ${pendingPlan.goal}`);
+          addNote("📝 Recorded to the repository's CLAUDE.md.");
+        } catch {
+          /* best-effort */
+        }
+      }
       setStatus((s) => ({ ...s, currentTask: "Plan applied" }));
     } catch (err) {
       addNote(`⚠️ ${err instanceof Error ? err.message : "Apply blocked"}`);
       setStatus((s) => ({ ...s, currentTask: "Apply blocked" }));
     }
-  }, [pendingPlan, addNote, syncEdits]);
+  }, [pendingPlan, addNote, syncEdits, repo]);
 
   // Revert restores any edited files via the backend (SUBTASK 8.4).
   const runRevert = useCallback(async () => {

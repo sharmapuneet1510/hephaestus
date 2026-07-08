@@ -84,24 +84,37 @@ async def _stream_reply(text: str, delay: float) -> AsyncIterator[bytes]:
     yield b"data: [DONE]\n\n"
 
 
-async def _stream_real(config, request: ChatRequest) -> AsyncIterator[bytes]:
+async def _stream_real(config, request: ChatRequest, session_store) -> AsyncIterator[bytes]:
     """Stream a real assistant reply from the internal AI API (SUBTASK 3.2).
 
-    Routes the request to a model (SUBTASK 3.4), emits an SSE meta event with the
-    chosen model, then streams deltas. AI failures surface as a user-safe message
-    delta (SUBTASK 3.3) rather than crashing the stream.
+    Routes the request to a model (SUBTASK 3.4), folds the loaded repo's CLAUDE.md
+    into the system prompt (SUBTASK 11.4), emits an SSE meta event with the chosen
+    model, then streams deltas. AI failures surface as a user-safe message delta
+    (SUBTASK 3.3) rather than crashing the stream.
     """
     # Imported lazily to avoid a circular import (routing/ai_client import ChatRequest).
-    from app.ai_client import AIClient, AIError, to_anthropic_messages
+    from pathlib import Path
+
+    from app.ai_client import SYSTEM_PROMPT, AIClient, AIError, to_anthropic_messages
+    from app.knowledge import build_prompt_preamble
     from app.routing import route
 
     tier, model = route(config, request)
     logger.info("chat: routed tier=%s model=%s module=%s", tier, model, request.module)
     yield f"data: {json.dumps({'model': model, 'tier': tier})}\n\n".encode()
 
+    system = SYSTEM_PROMPT
+    repo = session_store.load_repo()
+    if repo:
+        preamble = build_prompt_preamble(Path(repo.path), config)
+        if preamble:
+            system = f"{SYSTEM_PROMPT}\n\n{preamble}"
+
     client = AIClient(config)
     try:
-        async for text in client.stream(to_anthropic_messages(request.messages), model=model):
+        async for text in client.stream(
+            to_anthropic_messages(request.messages), model=model, system=system
+        ):
             yield f"data: {json.dumps({'delta': text})}\n\n".encode()
     except AIError as exc:
         yield f"data: {json.dumps({'delta': f'⚠️ {exc}'})}\n\n".encode()
@@ -115,7 +128,7 @@ async def chat(request: ChatRequest, http_request: Request) -> StreamingResponse
     """Stream an assistant reply as SSE — real AI when configured, else a mock."""
     config = http_request.app.state.config
     if config.ai.configured:
-        generator = _stream_real(config, request)
+        generator = _stream_real(config, request, http_request.app.state.session_store)
     else:
         generator = _stream_reply(build_mock_reply(request), _STREAM_DELAY_S)
     return StreamingResponse(

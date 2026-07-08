@@ -73,6 +73,21 @@ export async function fetchRepository(signal?: AbortSignal): Promise<RepoMetadat
   return ((await resp.json()) as { metadata: RepoMetadata | null }).metadata;
 }
 
+// ---- CLAUDE.md knowledge (TASK 11) ----
+/** Record a concise note in the loaded repo's CLAUDE.md (created if missing). */
+export async function addKnowledgeNote(
+  note: string,
+  section?: string
+): Promise<{ added: boolean; content: string }> {
+  const resp = await fetch("/api/knowledge/note", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ note, ...(section ? { section } : {}) }),
+  });
+  if (!resp.ok) throw new Error(`Knowledge note failed (${resp.status})`);
+  return (await resp.json()) as { added: boolean; content: string };
+}
+
 // ---- Agent tasks (TASK 10) ----
 export interface Subtask {
   id: string;

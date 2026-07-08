@@ -22,6 +22,7 @@ from app.context import default_context_engine
 from app.context import router as context_router
 from app.edit import default_edit_session
 from app.edit import router as edit_router
+from app.knowledge import router as knowledge_router
 from app.plan import default_plan_state
 from app.plan import router as plan_router
 from app.repo import default_session_store
@@ -92,6 +93,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(edit_router)
     app.include_router(test_router)
     app.include_router(tasks_router)
+    app.include_router(knowledge_router)
 
     # Mounted last so it only catches non-API paths. Serves the built SPA when
     # available; harmless (skipped) during tests/dev when dist doesn't exist.

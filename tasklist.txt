@@ -379,22 +379,36 @@ STATUS: DONE — overall_progress() weights completed subtasks by task progress;
 
 TASK 11: CLAUDE.md Knowledge Maintenance
 PROGRESS: 6%
+STATUS: DONE (2026-07-08) — app/knowledge.py (template, ensure, dedup notes,
+  prompt preamble) + chat wiring + Apply-records-note. Verified by test_knowledge.py,
+  and live (ensure creates CLAUDE.md, note added once, duplicate skipped).
+  NOTE: this maintains CLAUDE.md inside the LOADED repo (product feature), not this
+  project's own CLAUDE.md.
 
 SUBTASK 11.1: Create CLAUDE.md template
 OUTPUT: CLAUDE.md created at repo root if missing
 TEST: Missing file is generated with required sections
+STATUS: DONE — ensure() writes template() (9 required sections) when missing;
+  POST /api/knowledge/ensure. Verified in test_knowledge.py + live.
 
 SUBTASK 11.2: Update project knowledge after task
 OUTPUT: Completed task notes, commands, conventions, constraints appended or updated concisely
 TEST: After completed task, CLAUDE.md contains useful new knowledge
+STATUS: DONE — add_note() appends a bullet under a section; POST /api/knowledge/note;
+  Apply records "Applied plan: <goal>". Verified in test_knowledge.py + live.
 
 SUBTASK 11.3: Prevent noisy updates
 OUTPUT: Updates are concise and deduplicated
 TEST: Repeated task does not duplicate same notes
+STATUS: DONE — add_note() skips a bullet already present (returns added=False).
+  Verified in test_knowledge.py (count==1) + live (duplicate skipped).
 
 SUBTASK 11.4: Use CLAUDE.md in future prompts
 OUTPUT: Prompt builder includes relevant CLAUDE.md sections
 TEST: Assistant response reflects stored project conventions
+STATUS: DONE — build_prompt_preamble() returns CLAUDE.md content; the real chat
+  path folds it into the system prompt. Verified in test_knowledge.py (preamble
+  contains stored conventions). Live AI reflection needs the internal API (TASK 3).
 
 ---
 
