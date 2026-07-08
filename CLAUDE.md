@@ -4,6 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project State
 
+**MVP complete — all 15 tasks in `tasklist.txt` are done** (backend 123 tests / 93% coverage,
+frontend 15 tests, typecheck + build clean; end-to-end validated in `backend/tests/test_e2e.py`).
+The full journey works: load repo → ask → focus → plan → apply (diff) → test → update CLAUDE.md →
+task progress → generate final docs. Real internal-AI calls need `HEPHAESTUS_AI_ENDPOINT` +
+`HEPHAESTUS_AI_API_KEY`; without them the app runs on a deterministic mock (see the AI-client
+assumption below).
+
+The summary below describes the modules; it predates the "all tasks complete" line but remains
+accurate.
+
 Early, spec-driven development. **TASK 1–12 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
 routing, a repository loader, a context engine, module focus, the plan-first workflow, file editing

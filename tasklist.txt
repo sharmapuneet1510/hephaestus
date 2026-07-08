@@ -508,24 +508,41 @@ STATUS: DONE — agent_workflow_guide() (task files, subtasks, CLAUDE.md, test f
 
 TASK 15: MVP End-to-End Validation
 PROGRESS: 5%
+STATUS: DONE (2026-07-08) — tests/test_e2e.py drives the whole stack via real
+  endpoints. Verified: 123 backend + 15 frontend tests pass; typecheck + build clean.
 
 SUBTASK 15.1: Validate full user journey
 OUTPUT: Demo flow from repo load to code change to test to CLAUDE.md update
 TEST: End-to-end scenario completes successfully
+STATUS: DONE — test_full_user_journey: load -> context -> plan -> approve ->
+  apply (diff) -> test (passes) -> CLAUDE.md note. Completes successfully.
 
 SUBTASK 15.2: Validate failure recovery
 OUTPUT: Failed test creates fix plan and allows retry
 TEST: Intentional failing test is fixed or reported with next action
+STATUS: DONE — test_failure_recovery: a failing test feeds a fix plan
+  (failing_tests + fix step); approve + apply retry proceeds.
 
 SUBTASK 15.3: Validate large repo behavior
 OUTPUT: Large repo uses chunking and focused context without full blind load
 TEST: Prompt context stays within configured token budget
+STATUS: DONE — test_large_repo_chunking_and_compact_context: a 2000-line file
+  chunks (5), and the built TOON context is <10% of the raw source (no blind load).
 
 SUBTASK 15.4: Validate final docs
 OUTPUT: Final docs generated after MVP completion
 TEST: Docs match actual app behavior and configuration
+STATUS: DONE — test_final_docs_match_app: generated docs include all four guides,
+  real endpoints (POST /api/edit/apply, /api/plan), and config/default.yaml.
 
 ---
+
+MVP STATUS: COMPLETE (2026-07-08). All 15 tasks meet OUTPUT + TEST. End-to-end
+journey works: load repo -> ask -> focus -> plan -> apply (diff) -> test -> update
+CLAUDE.md -> update task progress -> generate final docs. Backend 123 tests (93%
+coverage), frontend 15 tests; typecheck + build clean. Real internal-AI calls
+require HEPHAESTUS_AI_ENDPOINT + _API_KEY (the app runs on a deterministic mock
+otherwise); see TASK 3's assumption (Anthropic Messages API shape).
 
 MVP Completion Rule:
 A task is complete only when it produces its OUTPUT and passes its TEST. No task should be marked complete based only on code being written.
