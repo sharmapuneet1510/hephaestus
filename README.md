@@ -23,6 +23,50 @@ knowledge in a `CLAUDE.md`.
 - **Model Routing** — route requests to the right model tier by task complexity.
 - **Knowledge Maintenance** — keep a concise `CLAUDE.md` in the target repo up to date.
 
+## 🚀 Run the Web App
+
+Hephaestus is a local app: a **Python/FastAPI backend** reads the repo and talks to the AI, and a
+**React SPA** is the UI. The most reliable way to run it locally is **single-origin mode** — build
+the frontend once, then let the backend serve it so the UI and `/api` share one origin (no dev proxy).
+
+**Prerequisites:** Python 3.11+, Node 20+, and [`uv`](https://github.com/astral-sh/uv).
+
+```bash
+# 1. Build the frontend (emits frontend/dist/)
+cd frontend
+npm install
+npm run build
+
+# 2. Set up and start the backend (from the repo root)
+cd ../backend
+uv venv --python 3.11 .venv
+uv pip install -e ".[dev]" --python .venv
+.venv/bin/python run_server.py        # serves UI + API on http://127.0.0.1:8899
+```
+
+Open **http://127.0.0.1:8899**, then **paste a local repository path** into the Repository panel to
+load a codebase and start chatting. (A browser can't hand a real filesystem path to the backend, so
+the web app takes a pasted path; the [desktop app](DESKTOP.md) adds a native "Open Folder" picker.)
+
+**AI keys are optional.** Without them the app runs on a deterministic **mock** so you can explore the
+full flow. To connect the real internal AI, set the endpoint and key before starting the backend:
+
+```bash
+export HEPHAESTUS_AI_ENDPOINT="https://your-internal-ai-gateway"
+export HEPHAESTUS_AI_API_KEY="…"      # read via the env-var name in config/default.yaml
+```
+
+**Live-reload development** (two terminals, Vite proxies `/api` → backend):
+
+```bash
+cd backend  && .venv/bin/python -m uvicorn app.main:app --reload --port 8899   # terminal 1
+cd frontend && npm run dev                                                     # terminal 2 → http://localhost:5173
+```
+
+> Want to see the UI without running anything? There's an
+> [interactive demo of the Forge interface](https://claude.ai/code/artifact/0de2f120-83eb-4147-b9bc-23e24c973eab)
+> (mock-backed — load the sample repo, plan a change, apply, run tests).
+
 ## 📐 Intended Tech Stack
 
 - **Frontend:** React + TypeScript + Vite, Monaco Editor (three-panel layout: repo tree · chat ·
@@ -34,7 +78,9 @@ knowledge in a `CLAUDE.md`.
 
 ## 🗺️ Project Status
 
-Early, spec-driven development. The product spec, execution plan, and implementer rules live in:
+**MVP complete** — all 15 tasks in `tasklist.txt` are done (backend 123 tests / 93% coverage,
+frontend tests + typecheck + build clean; end-to-end journey validated). The product spec, execution
+plan, and implementer rules live in:
 
 - [`requirement.txt`](requirement.txt) — full product specification and acceptance criteria.
 - [`tasklist.txt`](tasklist.txt) — the 15-task execution plan toward the MVP.
