@@ -6,9 +6,11 @@ import type { RepoMetadata, TreeNode } from "../api";
 vi.mock("../api", () => ({
   fetchRepository: vi.fn(),
   loadRepository: vi.fn(),
+  isDesktop: vi.fn(() => false),
+  openFolderDialog: vi.fn(),
 }));
 
-import { fetchRepository, loadRepository } from "../api";
+import { fetchRepository, isDesktop, loadRepository, openFolderDialog } from "../api";
 import { RepoTree } from "./RepoTree";
 
 const META: RepoMetadata = {
@@ -76,6 +78,25 @@ describe("RepoTree (TASK 4)", () => {
     await screen.findByTestId("repo-meta");
     await userEvent.setup().click(screen.getByLabelText("Focus on src"));
     expect(onSetFocus).toHaveBeenCalledWith("src");
+  });
+
+  it("shows a native Open Folder button on desktop and loads the picked path", async () => {
+    vi.mocked(fetchRepository).mockResolvedValue(null);
+    vi.mocked(isDesktop).mockReturnValue(true); // simulate the Tauri desktop shell
+    vi.mocked(openFolderDialog).mockResolvedValue("/picked/repo");
+    vi.mocked(loadRepository).mockResolvedValue({ metadata: META, tree: TREE });
+    const user = userEvent.setup();
+    render(<RepoTree />);
+
+    await user.click(screen.getByLabelText("Open folder"));
+    await waitFor(() => expect(loadRepository).toHaveBeenCalledWith("/picked/repo"));
+  });
+
+  it("hides the Open Folder button on the web", () => {
+    vi.mocked(fetchRepository).mockResolvedValue(null);
+    vi.mocked(isDesktop).mockReturnValue(false);
+    render(<RepoTree />);
+    expect(screen.queryByLabelText("Open folder")).not.toBeInTheDocument();
   });
 
   it("shows a safe error when the path is invalid (4.1)", async () => {

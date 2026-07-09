@@ -14,6 +14,13 @@ assumption below).
 The summary below describes the modules; it predates the "all tasks complete" line but remains
 accurate.
 
+**Two delivery forms** (see `DESKTOP.md`): (1) the **web app** — run the backend and open
+`http://127.0.0.1:8899`, load a repo by pasting its path; (2) a **Tauri v2 desktop app**
+(`frontend/src-tauri/`) that wraps the same UI + backend and adds a native "Open Folder" dialog. The
+only desktop-specific frontend code is `isDesktop()` / `openFolderDialog()` in `src/api.ts` (hidden on
+the web). The desktop window loads the local backend URL so `/api` stays same-origin. The Rust shell
+is compiled on the developer's machine (`npm run tauri dev|build`); it is not built in CI here.
+
 Early, spec-driven development. **TASK 1–12 are complete**: config/env/health, a three-panel "Forge"
 chat UI, SSE streaming chat that calls the internal AI API when configured (else a mock), model
 routing, a repository loader, a context engine, module focus, the plan-first workflow, file editing

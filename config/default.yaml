@@ -7,10 +7,12 @@
 server:
   host: 127.0.0.1
   port: 8000
-  # Origins allowed to call the backend (the Vite dev server).
+  # Origins allowed to call the backend (Vite dev server + the Tauri desktop shell).
   cors_origins:
     - http://localhost:5173
     - http://127.0.0.1:5173
+    - tauri://localhost
+    - http://tauri.localhost
 
 ai:
   # Internal office AI API base URL. Required (via env) before AI calls are made.

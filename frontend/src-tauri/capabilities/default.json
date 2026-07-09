@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core + native folder dialog for the main window, which loads the local backend URL.",
+  "windows": ["main"],
+  "remote": {
+    "urls": ["http://127.0.0.1:8899", "http://localhost:8899"]
+  },
+  "permissions": ["core:default", "dialog:default", "dialog:allow-open", "shell:allow-execute"]
+}

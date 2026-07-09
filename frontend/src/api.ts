@@ -27,6 +27,28 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse>
   return (await resp.json()) as HealthResponse;
 }
 
+// ---- Desktop (Tauri) integration ----
+/** True when running inside the Tauri desktop shell (vs. a plain browser). */
+export function isDesktop(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/**
+ * Open the native folder picker (desktop only) and return the chosen absolute
+ * path, or null if cancelled / running on the web. The web build keeps the
+ * paste-a-path input; only the desktop app can hand the backend a real path.
+ */
+export async function openFolderDialog(): Promise<string | null> {
+  if (!isDesktop()) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const selected = await open({
+    directory: true,
+    multiple: false,
+    title: "Open repository folder",
+  });
+  return typeof selected === "string" ? selected : null;
+}
+
 // ---- Repository (TASK 4) ----
 export interface TreeNode {
   name: string;

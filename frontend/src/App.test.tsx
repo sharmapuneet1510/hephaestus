@@ -47,6 +47,8 @@ vi.mock("./api", () => ({
   runSubtask: vi.fn(),
   addKnowledgeNote: vi.fn().mockResolvedValue({ added: true, content: "" }),
   generateDocs: vi.fn(),
+  isDesktop: vi.fn(() => false),
+  openFolderDialog: vi.fn(),
 }));
 
 import { App } from "./App";

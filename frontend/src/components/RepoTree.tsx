@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { fetchRepository, loadRepository, type RepoMetadata, type TreeNode } from "../api";
+import {
+  fetchRepository,
+  isDesktop,
+  loadRepository,
+  openFolderDialog,
+  type RepoMetadata,
+  type TreeNode,
+} from "../api";
 
 // Left panel — repository loader + file tree (TASK 4) with module focus (TASK 6).
 
@@ -68,6 +75,24 @@ export function RepoTree({
           void load(path);
         }}
       >
+        {isDesktop() && (
+          <button
+            className="repo-load__btn"
+            type="button"
+            aria-label="Open folder"
+            title="Open a repository folder"
+            disabled={state.kind === "loading"}
+            onClick={async () => {
+              const picked = await openFolderDialog();
+              if (picked) {
+                setPath(picked);
+                void load(picked);
+              }
+            }}
+          >
+            📁 Open…
+          </button>
+        )}
         <input
           className="repo-load__input"
           value={path}

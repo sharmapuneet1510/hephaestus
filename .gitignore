@@ -32,3 +32,8 @@ frontend/vite.config.d.ts
 
 # Browser-automation screenshots / scratch
 .playwright-mcp/
+
+# Tauri (Rust) build output + generated files
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+frontend/src-tauri/binaries/
